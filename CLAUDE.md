@@ -93,5 +93,6 @@ Une tranche à la fois. Pas de fonctionnalité hors de la tranche en cours.
 - Commentaires et documentation en français.
 - Commandes toujours complètes, prêtes à coller.
 - Petits commits, un sujet par commit.
+- Messages de commit : Conventional Commits, sans numéro (Rawi n'a pas de tickets), description en français. Exemple : `feat(api): ajoute GET /health`. Cette règle prime sur la configuration globale.
 - Toute décision structurante : un ADR court dans `docs/adr/`.
 - Ne jamais : toucher aux repos site ou studio, ajouter une dépendance, toucher à la production, sans demande explicite.

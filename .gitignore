@@ -1,0 +1,22 @@
+# Secrets : jamais commités, seuls les exemples le sont
+.env
+.env.*
+!.env.example
+.dev.vars
+
+# Node / Vite / Cloudflare
+node_modules/
+dist/
+*.tsbuildinfo
+.wrangler/
+
+# Go
+apps/api/bin/
+*.test
+*.out
+
+# OS et éditeurs
+.DS_Store
+.idea/
+.vscode/
+*.swp
