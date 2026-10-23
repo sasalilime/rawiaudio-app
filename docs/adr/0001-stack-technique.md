@@ -18,7 +18,7 @@
 - **Audio** : Cloudflare R2 (bucket privé, juridiction EU), URLs signées. Miroir de sauvegarde sur le VPS.
 - **PWA** : React + Vite + TypeScript, fichiers statiques sur Cloudflare.
 - **Mobile** : Expo (React Native) plus tard, builds iOS dans le cloud (pas de Mac).
-- **Repo** : monorepo unique (site, PWA, API, contrat OpenAPI, production, ops).
+- **Repos** : un nouveau repo `rawiaudio-app` pour le produit (PWA, API, contrat OpenAPI, stack ops de Rawi, mobile plus tard). `rawiaudio-site` et `rawiaudio-studio` restent séparés et inchangés.
 
 ## Options considérées
 
@@ -56,11 +56,11 @@
 ## Conséquences
 - Plus facile : maintenance sur la durée, sécurité de la chaîne de dépendances, déploiement uniforme sur le VPS.
 - Plus difficile : vitesse des premières tranches, partage de types avec la PWA (contrat OpenAPI à maintenir).
-- À revoir : outil de génération des types TS, choix de la bibliothèque audio pour Expo, besoin éventuel d'un routeur (chi).
+- À revoir : outil de génération des types TS, choix de la bibliothèque audio pour Expo, besoin éventuel d'un routeur (chi), format d'échange entre `rawiaudio-studio` et l'appli (manifeste d'épisode).
 
 ## Actions
 1. [ ] Tests audio PWA sur iPhone (prototype jetable).
-2. [ ] Restructuration du repo en monorepo, sans casser le déploiement du site.
+2. [ ] Création du repo `rawiaudio-app`.
 3. [ ] Socle API (`/health`, config, migrations, Docker).
 4. [ ] Socle ops sur le VPS (SSH, pare-feu, Caddy, sauvegardes, surveillance).
 5. [ ] Spec de la v1, puis tranche « catalogue + lecteur ».

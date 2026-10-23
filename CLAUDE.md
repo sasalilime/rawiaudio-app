@@ -6,19 +6,24 @@
 - Modèle : PWA gratuite d'abord, abonnement Stripe quand le catalogue le justifie (30 épisodes et plus).
 - Développeur unique : Salim, senior TypeScript, en apprentissage Go. Il relit chaque diff.
 
-## Structure du repo (monorepo)
+## Structure du repo `rawiaudio-app`
 ```
 apps/
-  site/      vitrine rawiaudio.com (Hono, Cloudflare Workers) — NE PAS MODIFIER sans demande
   web/       PWA React + Vite + TypeScript strict (app.rawiaudio.com, Cloudflare)
   api/       API Go (api.rawiaudio.com, Docker Compose sur le VPS OVH)
   mobile/    plus tard : Expo (React Native)
 contracts/
   openapi.yaml   contrat de l'API, source de vérité entre api/ et web/
-studio/      production des épisodes (scripts, sources)
-ops/         compose, Caddyfile, scripts de sauvegarde, runbooks/
+ops/         stack Docker Compose de Rawi (API + Postgres), scripts de sauvegarde, runbooks/
+spikes/      prototypes jetables
 docs/adr/    décisions d'architecture
 ```
+
+## Repos liés (séparés, on n'y touche pas depuis ici)
+- `rawiaudio-site` : vitrine rawiaudio.com (Hono, Cloudflare Workers).
+- `rawiaudio-studio` : production des épisodes (scripts, sources, rendus).
+- Le passage d'un épisode de studio vers l'appli (métadonnées + fichiers sur R2) reste à définir dans un ADR.
+- Le socle du VPS (Caddy frontal partagé, pare-feu, sauvegardes globales) sert plusieurs sites : il n'est pas dans ce repo.
 
 ## API Go (`apps/api`)
 - Bibliothèque standard `net/http` (ServeMux, routage natif `GET /episodes/{id}`). Pas de framework.
@@ -79,9 +84,9 @@ docs/adr/    décisions d'architecture
 Une tranche à la fois. Pas de fonctionnalité hors de la tranche en cours.
 
 ## Ops (VPS OVH)
-- Une stack Docker Compose par site, un seul Caddy en frontal, un Postgres par stack, un réseau Docker par stack, des limites mémoire.
+- Une stack Docker Compose par site, un seul Caddy en frontal (hors de ce repo), un Postgres par stack, un réseau Docker par stack, des limites mémoire.
 - Le VPS héberge aussi l'Institut Al-Ihsan : ne jamais toucher à sa stack.
-- Tout ce qui tourne sur le VPS est décrit dans `ops/`. Les procédures d'incident vont dans `ops/runbooks/`.
+- La stack de Rawi est décrite dans `ops/`. Les procédures d'incident vont dans `ops/runbooks/`.
 - Pour l'ops, Salim tape les commandes ; Claude Code explique le pourquoi.
 
 ## Conventions
@@ -89,4 +94,4 @@ Une tranche à la fois. Pas de fonctionnalité hors de la tranche en cours.
 - Commandes toujours complètes, prêtes à coller.
 - Petits commits, un sujet par commit.
 - Toute décision structurante : un ADR court dans `docs/adr/`.
-- Ne jamais : modifier `apps/site`, ajouter une dépendance, toucher à la production, sans demande explicite.
+- Ne jamais : toucher aux repos site ou studio, ajouter une dépendance, toucher à la production, sans demande explicite.
