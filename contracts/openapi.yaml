@@ -59,13 +59,7 @@ paths:
       summary: Un épisode publié, avec son résumé et ses sources
       security: []
       parameters:
-        - name: id
-          in: path
-          required: true
-          description: Identifiant public immuable, langue et numéro sur 3 chiffres.
-          schema:
-            type: string
-            example: fr-001
+        - $ref: "#/components/parameters/EpisodeId"
       responses:
         "200":
           description: L'épisode.
@@ -83,7 +77,43 @@ paths:
                 error: not_found
         "500":
           $ref: "#/components/responses/Internal"
+  /episodes/{id}/audio:
+    get:
+      operationId: getEpisodeAudio
+      summary: URL temporaire du fichier audio d'un épisode publié
+      description: >
+        L'URL pointe directement sur Cloudflare R2 et accepte les requêtes Range.
+        Elle expire au bout d'une heure : passé expiresAt, en redemander une (ADR-0003).
+      security: [] # public tant que le catalogue est gratuit ; l'abonnement se vérifiera ici
+      parameters:
+        - $ref: "#/components/parameters/EpisodeId"
+      responses:
+        "200":
+          description: L'URL signée et son heure d'expiration.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AudioUrl"
+        "404":
+          description: Épisode inconnu, ou pas encore publié.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: not_found
+        "500":
+          $ref: "#/components/responses/Internal"
 components:
+  parameters:
+    EpisodeId:
+      name: id
+      in: path
+      required: true
+      description: Identifiant public immuable, langue et numéro sur 3 chiffres.
+      schema:
+        type: string
+        example: fr-001
   responses:
     InvalidRequest:
       description: Requête invalide (paramètre absent ou inconnu).
@@ -182,6 +212,18 @@ components:
           type: string
           description: Lien Shamela uniquement (matrice studio/docs/sources.md).
           pattern: "^https://shamela\\.ws/book/[0-9]+(/[0-9]+)?$"
+    AudioUrl:
+      type: object
+      additionalProperties: false
+      required: [url, expiresAt]
+      properties:
+        url:
+          type: string
+          format: uri
+          description: URL pré-signée sur le domaine S3 de R2. Ne pas la mettre en cache, elle change à chaque appel.
+        expiresAt:
+          type: string
+          format: date-time
     EpisodeList:
       type: object
       additionalProperties: false
