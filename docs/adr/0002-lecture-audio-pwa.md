@@ -51,3 +51,11 @@ Constats en cours de route :
 ## Actions
 1. [ ] Le 29 octobre 2026 : **en mode Avion**, rouvrir l'appli installée et vérifier que l'épisode est toujours « téléchargé ». Le prototype n'est plus en ligne : avec le réseau, l'appli afficherait la page d'erreur de Cloudflare.
 2. [x] Déploiement du prototype supprimé le 26 octobre 2026.
+
+## Suivi (26 octobre 2026, tranche « URLs signées R2 »)
+Mesures faites depuis le poste de Salim, avec une URL signée par l'API sur le vrai bucket (ADR-0003) :
+- R2 répond **206** aux plages (`bytes=0-1`, plage au milieu du fichier), avec le bon `Content-Range`.
+- **Premier octet en 0,16 à 0,22 s** une fois la connexion ouverte. R2 n'explique donc pas un démarrage de 5 à 15 s.
+- Sur ce poste, la seule résolution DNS du domaine de R2 prend 3 à 5 s. C'est son réseau, pas R2 : la connexion et le chiffrement prennent ensuite moins de 0,1 s chacun.
+- CORS : R2 renvoie `Access-Control-Allow-Origin: https://app.rawiaudio.com` pour cette origine, et rien pour une autre.
+- Pas encore vérifié : le téléchargement par `fetch` depuis la vraie PWA, et le délai avant le premier son sur iPhone. Ce sera fait à la tranche 5.

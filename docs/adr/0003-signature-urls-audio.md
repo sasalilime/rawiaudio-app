@@ -39,3 +39,11 @@
 - Changer le slug d'un épisode oblige à déplacer son fichier dans le bucket.
 - La clé secrète R2 ne quitte jamais l'API et n'apparaît jamais dans les logs.
 - À revoir si la latence de R2 pose problème (ADR-0002) : l'option C.
+
+## Vérification (26 octobre 2026)
+- La signature reproduit au caractère près l'exemple officiel d'AWS (« Authenticating Requests: Using Query Parameters »).
+- Le bucket `rawi-audio` existe en juridiction EU, avec l'épisode 1 à `fr/001-les-gens-de-la-caverne/audio-128.mp3` ; sa relecture donne une empreinte identique au fichier d'origine.
+- Avec un token « Object Read only » limité au bucket, une URL renvoyée par `GET /episodes/{id}/audio` lit le fichier :
+  - le fichier entier renvoie 200, une plage renvoie 206 ;
+  - une signature modifiée ou une URL expirée renvoie 403 ; un fichier absent, 404.
+- Le CORS posé par `ops/r2-cors.json` n'autorise que `https://app.rawiaudio.com`.
