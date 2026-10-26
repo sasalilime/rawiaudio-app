@@ -54,3 +54,12 @@ test('500 et hors ligne deviennent UnavailableError', async () => {
   await assert.rejects(repositoryAnswering(json(500, { error: 'internal' })).list('fr'), UnavailableError)
   await assert.rejects(repositoryAnswering(new TypeError('Failed to fetch')).list('fr'), UnavailableError)
 })
+
+test("traduit l'URL audio, avec son expiration en Date", async () => {
+  const audio = await repositoryAnswering(
+    json(200, { url: 'https://r2.example/fr/001/audio-128.mp3?X-Amz-Signature=a', expiresAt: '2026-10-26T13:00:00Z' }),
+  ).getAudioUrl('fr-001')
+
+  assert.equal(audio.url, 'https://r2.example/fr/001/audio-128.mp3?X-Amz-Signature=a')
+  assert.equal(audio.expiresAt.toISOString(), '2026-10-26T13:00:00.000Z')
+})

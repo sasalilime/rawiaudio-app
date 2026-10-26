@@ -1,5 +1,6 @@
 import type { Episode, EpisodeSummary, Lang } from '../../core/domain/episode.ts'
 import { NotFoundError, UnavailableError } from '../../core/domain/errors.ts'
+import type { AudioUrl } from '../../core/domain/playback.ts'
 import type { EpisodeRepository } from '../../core/ports/episodeRepository.ts'
 import { ApiError, type Api } from './apiClient.ts'
 import type * as dto from './types.ts'
@@ -13,6 +14,10 @@ export function createHttpEpisodeRepository(api: Api): EpisodeRepository {
     },
     async get(id: string, signal?: AbortSignal) {
       return toEpisode(await translateErrors(api.getEpisode(id, signal), signal))
+    },
+    async getAudioUrl(id: string, signal?: AbortSignal): Promise<AudioUrl> {
+      const audio = await translateErrors(api.getAudioUrl(id, signal), signal)
+      return { url: audio.url, expiresAt: new Date(audio.expiresAt) }
     },
   }
 }

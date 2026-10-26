@@ -1,11 +1,13 @@
 import { createContext, useContext, type ReactNode } from 'react'
 import type { GetEpisode } from '../core/useCases/getEpisode.ts'
 import type { ListCatalog } from '../core/useCases/listCatalog.ts'
+import type { PlaybackSession } from '../core/useCases/playbackSession.ts'
 
 /** Les cas d'usage dont l'interface a besoin, assemblés dans main.tsx. */
 export interface UseCases {
   listCatalog: ListCatalog
   getEpisode: GetEpisode
+  playback: PlaybackSession
 }
 
 const UseCasesContext = createContext<UseCases | null>(null)

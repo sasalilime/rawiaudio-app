@@ -3,9 +3,13 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { createGetEpisode } from './core/useCases/getEpisode.ts'
 import { createListCatalog } from './core/useCases/listCatalog.ts'
+import { createPlaybackSession } from './core/useCases/playbackSession.ts'
+import { createHtmlAudioPlayer } from './infra/audio/htmlAudioPlayer.ts'
 import { createApi } from './infra/http/apiClient.ts'
 import { createHttpEpisodeRepository } from './infra/http/episodeRepository.ts'
+import { createLocalPositionStore } from './infra/storage/localPositionStore.ts'
 import { App } from './ui/App.tsx'
+import { fr } from './ui/i18n/fr.ts'
 import { UseCasesProvider, type UseCases } from './ui/useCases.tsx'
 import './ui/styles.css'
 
@@ -15,6 +19,13 @@ const episodes = createHttpEpisodeRepository(createApi(import.meta.env.VITE_API_
 const useCases: UseCases = {
   listCatalog: createListCatalog(episodes),
   getEpisode: createGetEpisode(episodes),
+  playback: createPlaybackSession({
+    episodes,
+    player: createHtmlAudioPlayer(document),
+    positions: createLocalPositionStore(localStorage),
+    now: () => new Date(),
+    describe: (episode) => ({ title: episode.title, artist: fr.appName, artworkUrl: '/icons/icon-512.png' }),
+  }),
 }
 
 const root = document.getElementById('root')

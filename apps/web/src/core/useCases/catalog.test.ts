@@ -29,6 +29,9 @@ function fakeRepository(get: () => Promise<Episode>) {
       calls.push(`get ${id}`)
       return get()
     },
+    getAudioUrl: async () => {
+      throw new Error('non utilisé')
+    },
   }
   return { repository, calls }
 }

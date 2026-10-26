@@ -2,6 +2,7 @@ import { fr } from './i18n/fr.ts'
 import { CatalogPage } from './pages/CatalogPage.tsx'
 import { EpisodePage } from './pages/EpisodePage.tsx'
 import { Link, useRoute } from './navigation.tsx'
+import { MiniPlayer } from './components/MiniPlayer.tsx'
 import { PageTitle } from './components/PageTitle.tsx'
 
 export function App() {
@@ -26,6 +27,7 @@ export function App() {
           </>
         )}
       </main>
+      <MiniPlayer />
     </>
   )
 }

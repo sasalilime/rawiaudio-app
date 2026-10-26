@@ -229,3 +229,98 @@ button {
 .sources li + li {
   margin-block-start: 0.5rem;
 }
+
+/* Bouton principal de la fiche */
+.play-button {
+  margin-block: 1.5rem 0;
+  min-width: 11rem;
+  font-size: 1.1rem;
+  padding: 0.75rem 1.75rem;
+}
+
+/* Mini-lecteur, fixé en bas ; le bloc vide réserve sa place pour que la fin de page reste lisible. */
+.player-spacer {
+  height: 11rem;
+}
+
+.player {
+  position: fixed;
+  inset-inline: 0;
+  inset-block-end: 0;
+  padding: 0.75rem max(1.25rem, env(safe-area-inset-left, 0px)) calc(0.5rem + env(safe-area-inset-bottom, 0px));
+  background: var(--nuit);
+  border-block-start: 1px solid var(--trait);
+}
+
+.player > * {
+  max-width: var(--colonne);
+  margin-inline: auto;
+}
+
+.player-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+}
+
+.player-title {
+  font-family: var(--titre);
+  font-size: 1.15rem;
+  line-height: 1.2;
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.player-time {
+  flex-shrink: 0;
+  color: var(--brume);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.player-progress {
+  display: block;
+  width: 100%;
+  margin-block: 0.5rem;
+  accent-color: var(--ambre);
+}
+
+.player-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+/* Cibles d'au moins 44 px : des mains d'enfant, un téléphone tenu d'une main. */
+.player-toggle,
+.player-skip {
+  display: inline-grid;
+  place-items: center;
+  min-width: 3rem;
+  min-height: 3rem;
+  padding: 0;
+}
+
+.player-toggle {
+  width: 3.5rem;
+  height: 3.5rem;
+}
+
+.player-skip {
+  background: transparent;
+  color: var(--papier);
+  border: 1px solid var(--trait);
+  font-size: 0.95rem;
+}
+
+.player-status {
+  min-height: 1.4em;
+  margin: 0.25rem 0 0;
+  color: var(--brume);
+  font-size: 0.85rem;
+  text-align: center;
+}

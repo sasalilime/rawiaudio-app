@@ -1,4 +1,5 @@
 import type { Episode, EpisodeSummary, Lang } from '../domain/episode.ts'
+import type { AudioUrl } from '../domain/playback.ts'
 
 /**
  * Accès aux épisodes publiés. Implémenté dans infra/http.
@@ -9,4 +10,6 @@ export interface EpisodeRepository {
   /** Du plus récent au plus ancien. */
   list(lang: Lang, signal?: AbortSignal): Promise<EpisodeSummary[]>
   get(id: string, signal?: AbortSignal): Promise<Episode>
+  /** URL temporaire du fichier audio ; différente à chaque appel. */
+  getAudioUrl(id: string, signal?: AbortSignal): Promise<AudioUrl>
 }

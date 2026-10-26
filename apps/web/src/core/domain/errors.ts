@@ -8,6 +8,14 @@ export class NotFoundError extends Error {
   }
 }
 
+/** Le navigateur a refusé de lancer le son sans un geste de l'utilisateur (iOS surtout). Un nouvel appui suffit. */
+export class PlaybackBlockedError extends Error {
+  constructor(message: string, options?: ErrorOptions) {
+    super(message, options)
+    this.name = 'PlaybackBlockedError'
+  }
+}
+
 /** Le service est injoignable : hors ligne, ou serveur en panne. Réessayer peut suffire. */
 export class UnavailableError extends Error {
   constructor(message: string, options?: ErrorOptions) {
