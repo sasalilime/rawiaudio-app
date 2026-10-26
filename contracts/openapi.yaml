@@ -1,0 +1,43 @@
+# Contrat de l'API Rawi Audio : source de vérité entre apps/api et apps/web.
+# Toute route modifiée dans l'API est d'abord modifiée ici.
+openapi: 3.1.0
+info:
+  title: API Rawi Audio
+  version: 0.1.0
+servers:
+  - url: https://api.rawiaudio.com
+  - url: http://localhost:8080
+    description: développement local
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      summary: État de l'API et de sa base de données
+      security: [] # accès public, déclaré explicitement
+      responses:
+        "200":
+          description: L'API et Postgres répondent.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+              example:
+                status: ok
+        "503":
+          description: Postgres ne répond pas.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+              example:
+                status: unavailable
+components:
+  schemas:
+    Health:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ok, unavailable]
