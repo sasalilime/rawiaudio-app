@@ -23,6 +23,7 @@ type catalogReader interface {
 type seriesRefResponse struct {
 	ID    string `json:"id"`
 	Title string `json:"title"`
+	Part  int    `json:"part"`
 }
 
 type themeRefResponse struct {
@@ -153,7 +154,7 @@ func toSummaryResponse(episode service.EpisodeSummary) episodeSummaryResponse {
 		response.PublishedAt = &utc
 	}
 	if episode.Series != nil {
-		response.Series = &seriesRefResponse{ID: episode.Series.ID, Title: episode.Series.Title}
+		response.Series = &seriesRefResponse{ID: episode.Series.ID, Title: episode.Series.Title, Part: episode.Series.Part}
 	}
 	return response
 }

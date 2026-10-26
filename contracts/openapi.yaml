@@ -145,14 +145,19 @@ components:
       enum: [fr, ar, en]
     SeriesRef:
       type: object
+      description: La série (une histoire en plusieurs parties) et la place de l'épisode dans celle-ci.
       additionalProperties: false
-      required: [id, title]
+      required: [id, title, part]
       properties:
         id:
           type: string
-          example: fr-al-kahf
+          example: fr-moussa-et-pharaon
         title:
           type: string
+        part:
+          type: integer
+          minimum: 1
+          description: Numéro de la partie, les parties s'écoutent dans l'ordre.
     ThemeRef:
       type: object
       additionalProperties: false

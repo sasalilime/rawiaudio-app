@@ -23,7 +23,7 @@ func NewCatalog(pool *pgxpool.Pool) *Catalog {
 }
 
 // Colonnes communes à la liste et à la fiche, dans l'ordre attendu par scanSummary.
-const summaryColumns = `e.id, e.lang, e.number, e.slug, e.title, e.reference, e.duration_seconds, e.published_at, s.id, s.title`
+const summaryColumns = `e.id, e.lang, e.number, e.slug, e.title, e.reference, e.duration_seconds, e.published_at, s.id, s.title, e.series_part`
 
 func (c *Catalog) Episodes(ctx context.Context, lang string) ([]service.EpisodeSummary, error) {
 	rows, err := c.pool.Query(ctx, `
@@ -126,15 +126,17 @@ func (c *Catalog) themesByEpisode(ctx context.Context, filter, arg string) (map[
 func scanSummary(row pgx.Row, extra ...any) (service.EpisodeSummary, error) {
 	var episode service.EpisodeSummary
 	var seriesID, seriesTitle *string // NULL quand l'épisode n'a pas de série (LEFT JOIN)
+	var seriesPart *int
 	dest := append([]any{
 		&episode.ID, &episode.Lang, &episode.Number, &episode.Slug, &episode.Title, &episode.Reference,
-		&episode.DurationSeconds, &episode.PublishedAt, &seriesID, &seriesTitle,
+		&episode.DurationSeconds, &episode.PublishedAt, &seriesID, &seriesTitle, &seriesPart,
 	}, extra...)
 	if err := row.Scan(dest...); err != nil {
 		return service.EpisodeSummary{}, err
 	}
-	if seriesID != nil && seriesTitle != nil {
-		episode.Series = &service.SeriesRef{ID: *seriesID, Title: *seriesTitle}
+	// La base garantit qu'un épisode d'une série a toujours un numéro de partie.
+	if seriesID != nil && seriesTitle != nil && seriesPart != nil {
+		episode.Series = &service.SeriesRef{ID: *seriesID, Title: *seriesTitle, Part: *seriesPart}
 	}
 	return episode, nil
 }

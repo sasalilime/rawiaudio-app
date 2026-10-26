@@ -11,10 +11,11 @@ import (
 // ErrNotFound : la ressource n'existe pas, ou n'est pas visible (épisode pas encore publié).
 var ErrNotFound = errors.New("introuvable")
 
-// SeriesRef identifie la série d'un épisode.
+// SeriesRef identifie la série d'un épisode, et la place de l'épisode dans cette série.
 type SeriesRef struct {
 	ID    string
 	Title string
+	Part  int // numéro de la partie : 1, 2, 3…
 }
 
 // ThemeRef est un thème du catalogue ; Position donne l'ordre d'affichage des thèmes.

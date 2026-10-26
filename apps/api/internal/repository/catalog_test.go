@@ -24,11 +24,11 @@ func catalogFixture(t *testing.T) *pgxpool.Pool {
 	}
 	_, err := pool.Exec(t.Context(), `
 		INSERT INTO series (id, lang, title) VALUES ('fr-al-kahf', 'fr', 'Al-Kahf');
-		INSERT INTO episodes (id, lang, number, slug, title, reference, duration_seconds, published_at, summary, series_id) VALUES
-			('fr-001', 'fr', 1, 'un', 'Un', 'Réf 1', 392, '2026-10-16 00:00:00+00', '{"premier", "second"}', 'fr-al-kahf'),
-			('fr-002', 'fr', 2, 'deux', 'Deux', 'Réf 2', 400, NULL, '{}', NULL),
-			('fr-003', 'fr', 3, 'trois', 'Trois', 'Réf 3', 410, '2099-01-01 00:00:00+00', '{}', NULL),
-			('en-001', 'en', 1, 'one', 'One', 'Ref 1', 380, '2026-10-16 00:00:00+00', '{}', NULL);
+		INSERT INTO episodes (id, lang, number, slug, title, reference, duration_seconds, published_at, summary, series_id, series_part) VALUES
+			('fr-001', 'fr', 1, 'un', 'Un', 'Réf 1', 392, '2026-10-16 00:00:00+00', '{"premier", "second"}', 'fr-al-kahf', 2),
+			('fr-002', 'fr', 2, 'deux', 'Deux', 'Réf 2', 400, NULL, '{}', NULL, NULL),
+			('fr-003', 'fr', 3, 'trois', 'Trois', 'Réf 3', 410, '2099-01-01 00:00:00+00', '{}', NULL, NULL),
+			('en-001', 'en', 1, 'one', 'One', 'Ref 1', 380, '2026-10-16 00:00:00+00', '{}', NULL, NULL);
 		-- Insérées à l'envers : l'ordre de lecture doit suivre position.
 		INSERT INTO episode_sources (episode_id, position, label, url) VALUES
 			('fr-001', 2, 'Deuxième', 'https://shamela.ws/book/42/2'),
@@ -69,8 +69,8 @@ func TestEpisodesReturnsAllOfOneLanguage(t *testing.T) {
 	if first.PublishedAt == nil || !first.PublishedAt.Equal(wantDate) {
 		t.Errorf("fr-001 : publishedAt = %v, attendu %v", first.PublishedAt, wantDate)
 	}
-	if first.Series == nil || first.Series.ID != "fr-al-kahf" || first.Series.Title != "Al-Kahf" {
-		t.Errorf("fr-001 : série = %+v, attendu fr-al-kahf", first.Series)
+	if first.Series == nil || *first.Series != (service.SeriesRef{ID: "fr-al-kahf", Title: "Al-Kahf", Part: 2}) {
+		t.Errorf("fr-001 : série = %+v, attendu fr-al-kahf, partie 2", first.Series)
 	}
 	if first.Lang != "fr" || first.Number != 1 || first.Slug != "un" || first.DurationSeconds != 392 || first.Reference != "Réf 1" {
 		t.Errorf("fr-001 : champs = %+v", first)
@@ -177,6 +177,21 @@ func TestThemeAndEpisodeMustShareLanguage(t *testing.T) {
 	} {
 		if _, err := pool.Exec(t.Context(), "INSERT INTO episode_themes (episode_id, theme_id, lang) VALUES "+row); err == nil {
 			t.Errorf("%s : insertion acceptée, attendu un refus de la base", row)
+		}
+	}
+}
+
+func TestSeriesPartsAreConsistent(t *testing.T) {
+	pool := catalogFixture(t)
+
+	for name, statement := range map[string]string{
+		"série sans partie":        "INSERT INTO episodes (id, lang, number, slug, title, reference, duration_seconds, series_id) VALUES ('fr-004', 'fr', 4, 'q', 'Q', 'R', 1, 'fr-al-kahf')",
+		"partie sans série":        "INSERT INTO episodes (id, lang, number, slug, title, reference, duration_seconds, series_part) VALUES ('fr-004', 'fr', 4, 'q', 'Q', 'R', 1, 1)",
+		"même partie deux fois":    "INSERT INTO episodes (id, lang, number, slug, title, reference, duration_seconds, series_id, series_part) VALUES ('fr-004', 'fr', 4, 'q', 'Q', 'R', 1, 'fr-al-kahf', 2)",
+		"série d'une autre langue": "INSERT INTO episodes (id, lang, number, slug, title, reference, duration_seconds, series_id, series_part) VALUES ('en-002', 'en', 2, 'q', 'Q', 'R', 1, 'fr-al-kahf', 3)",
+	} {
+		if _, err := pool.Exec(t.Context(), statement); err == nil {
+			t.Errorf("%s : insertion acceptée, attendu un refus de la base", name)
 		}
 	}
 }
