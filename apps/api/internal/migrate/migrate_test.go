@@ -1,58 +1,17 @@
 package migrate
 
 import (
-	"context"
-	"fmt"
-	"os"
 	"slices"
 	"testing"
 	"testing/fstest"
-	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
+
+	"rawiaudio.com/api/internal/pgtest"
 )
 
-// testPool renvoie un pool dont les tables vont dans un schéma jetable,
-// supprimé à la fin du test. Sauté si TEST_DATABASE_URL est absent.
-func testPool(t *testing.T) *pgxpool.Pool {
-	t.Helper()
-	url := os.Getenv("TEST_DATABASE_URL")
-	if url == "" {
-		t.Skip("TEST_DATABASE_URL absent : test d'intégration sauté")
-	}
-
-	admin, err := pgx.Connect(t.Context(), url)
-	if err != nil {
-		t.Fatalf("connexion: %v", err)
-	}
-	schema := pgx.Identifier{fmt.Sprintf("test_migrate_%d", time.Now().UnixNano())}.Sanitize()
-	if _, err := admin.Exec(t.Context(), "CREATE SCHEMA "+schema); err != nil {
-		t.Fatalf("création du schéma: %v", err)
-	}
-	// t.Context() est déjà annulé quand les Cleanup tournent.
-	t.Cleanup(func() {
-		if _, err := admin.Exec(context.Background(), "DROP SCHEMA "+schema+" CASCADE"); err != nil {
-			t.Errorf("suppression du schéma: %v", err)
-		}
-		admin.Close(context.Background())
-	})
-
-	cfg, err := pgxpool.ParseConfig(url)
-	if err != nil {
-		t.Fatalf("config: %v", err)
-	}
-	cfg.ConnConfig.RuntimeParams["search_path"] = schema
-	pool, err := pgxpool.NewWithConfig(t.Context(), cfg)
-	if err != nil {
-		t.Fatalf("pool: %v", err)
-	}
-	t.Cleanup(pool.Close)
-	return pool
-}
-
 func TestRunAppliesEachFileOnce(t *testing.T) {
-	pool := testPool(t)
+	pool := pgtest.Pool(t)
 	fsys := fstest.MapFS{
 		// Plusieurs instructions dans un fichier ; 0002 a besoin de la table créée par 0001.
 		"0001_items.sql": {Data: []byte("CREATE TABLE items (id int); INSERT INTO items VALUES (1);")},
@@ -88,7 +47,7 @@ func TestRunAppliesEachFileOnce(t *testing.T) {
 }
 
 func TestRunRollsBackFailedFile(t *testing.T) {
-	pool := testPool(t)
+	pool := pgtest.Pool(t)
 	fsys := fstest.MapFS{
 		"0001_broken.sql": {Data: []byte("CREATE TABLE half (id int); SELEC 1;")},
 	}
