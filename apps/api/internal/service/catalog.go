@@ -17,6 +17,13 @@ type SeriesRef struct {
 	Title string
 }
 
+// ThemeRef est un thème du catalogue ; Position donne l'ordre d'affichage des thèmes.
+type ThemeRef struct {
+	ID       string
+	Title    string
+	Position int
+}
+
 // EpisodeSummary est un épisode tel qu'il apparaît dans la liste du catalogue.
 type EpisodeSummary struct {
 	ID              string
@@ -28,6 +35,7 @@ type EpisodeSummary struct {
 	DurationSeconds int
 	PublishedAt     *time.Time // nil : pas de date de publication (brouillon)
 	Series          *SeriesRef // nil : épisode hors série
+	Themes          []ThemeRef // dans l'ordre d'affichage des thèmes ; vide si l'épisode n'en a pas
 }
 
 // Source est un passage d'un livre de Shamela, cité sous l'épisode.

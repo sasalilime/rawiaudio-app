@@ -153,10 +153,24 @@ components:
           example: fr-al-kahf
         title:
           type: string
+    ThemeRef:
+      type: object
+      additionalProperties: false
+      required: [id, title, position]
+      properties:
+        id:
+          type: string
+          example: fr-histoires-du-coran
+        title:
+          type: string
+        position:
+          type: integer
+          minimum: 1
+          description: Ordre d'affichage des thèmes dans le catalogue.
     EpisodeSummary:
       type: object
       unevaluatedProperties: false
-      required: [id, number, slug, title, reference, durationSeconds, publishedAt, series]
+      required: [id, number, slug, title, reference, durationSeconds, publishedAt, series, themes]
       properties:
         id:
           type: string
@@ -184,6 +198,11 @@ components:
           anyOf:
             - $ref: "#/components/schemas/SeriesRef"
             - type: "null"
+        themes:
+          type: array
+          description: Les thèmes de l'épisode, dans leur ordre d'affichage ; vide s'il n'en a aucun.
+          items:
+            $ref: "#/components/schemas/ThemeRef"
     Episode:
       allOf:
         - $ref: "#/components/schemas/EpisodeSummary"

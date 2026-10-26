@@ -32,7 +32,16 @@ func catalogFixture(t *testing.T) *pgxpool.Pool {
 		-- Insérées à l'envers : l'ordre de lecture doit suivre position.
 		INSERT INTO episode_sources (episode_id, position, label, url) VALUES
 			('fr-001', 2, 'Deuxième', 'https://shamela.ws/book/42/2'),
-			('fr-001', 1, 'Première', 'https://shamela.ws/book/42/1');`)
+			('fr-001', 1, 'Première', 'https://shamela.ws/book/42/1');
+		-- Positions inversées par rapport à l'ordre d'insertion : la lecture doit suivre position.
+		INSERT INTO themes (id, lang, slug, title, position) VALUES
+			('fr-prophetes', 'fr', 'prophetes', 'Les prophètes', 2),
+			('fr-histoires-du-coran', 'fr', 'histoires-du-coran', 'Histoires du Coran', 1),
+			('en-prophets', 'en', 'prophets', 'Prophets', 1);
+		INSERT INTO episode_themes (episode_id, theme_id, lang) VALUES
+			('fr-001', 'fr-prophetes', 'fr'),
+			('fr-001', 'fr-histoires-du-coran', 'fr'),
+			('en-001', 'en-prophets', 'en');`)
 	if err != nil {
 		t.Fatalf("données de test: %v", err)
 	}
@@ -123,5 +132,51 @@ func TestEpisodeUnknownIsNotFound(t *testing.T) {
 
 	if _, err := catalog.Episode(t.Context(), "fr-999"); !errors.Is(err, service.ErrNotFound) {
 		t.Errorf("erreur = %v, attendu service.ErrNotFound", err)
+	}
+}
+
+func TestThemesAreReadInDisplayOrder(t *testing.T) {
+	catalog := NewCatalog(catalogFixture(t))
+	want := []service.ThemeRef{
+		{ID: "fr-histoires-du-coran", Title: "Histoires du Coran", Position: 1},
+		{ID: "fr-prophetes", Title: "Les prophètes", Position: 2},
+	}
+
+	episode, err := catalog.Episode(t.Context(), "fr-001")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(episode.Themes, want) {
+		t.Errorf("fiche : thèmes = %v, attendu %v", episode.Themes, want)
+	}
+
+	list, err := catalog.Episodes(t.Context(), "fr")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, e := range list {
+		switch e.ID {
+		case "fr-001":
+			if !slices.Equal(e.Themes, want) {
+				t.Errorf("liste : thèmes de fr-001 = %v, attendu %v", e.Themes, want)
+			}
+		default:
+			if len(e.Themes) != 0 {
+				t.Errorf("liste : %s ne devrait avoir aucun thème, obtenu %v", e.ID, e.Themes)
+			}
+		}
+	}
+}
+
+func TestThemeAndEpisodeMustShareLanguage(t *testing.T) {
+	pool := catalogFixture(t)
+
+	for _, row := range []string{
+		"('fr-002', 'en-prophets', 'fr')", // thème anglais déclaré français
+		"('fr-002', 'en-prophets', 'en')", // épisode français déclaré anglais
+	} {
+		if _, err := pool.Exec(t.Context(), "INSERT INTO episode_themes (episode_id, theme_id, lang) VALUES "+row); err == nil {
+			t.Errorf("%s : insertion acceptée, attendu un refus de la base", row)
+		}
 	}
 }

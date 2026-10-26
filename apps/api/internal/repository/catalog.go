@@ -41,6 +41,14 @@ func (c *Catalog) Episodes(ctx context.Context, lang string) ([]service.EpisodeS
 	if err != nil {
 		return nil, fmt.Errorf("lecture des épisodes: %w", err)
 	}
+
+	themes, err := c.themesByEpisode(ctx, themesOfLang, lang)
+	if err != nil {
+		return nil, err
+	}
+	for i := range episodes {
+		episodes[i].Themes = themes[episodes[i].ID]
+	}
 	return episodes, nil
 }
 
@@ -60,6 +68,12 @@ func (c *Catalog) Episode(ctx context.Context, id string) (service.Episode, erro
 	}
 	episode.EpisodeSummary = summary
 
+	themes, err := c.themesByEpisode(ctx, themesOfEpisode, id)
+	if err != nil {
+		return service.Episode{}, err
+	}
+	episode.Themes = themes[id]
+
 	rows, err := c.pool.Query(ctx,
 		`SELECT label, url FROM episode_sources WHERE episode_id = $1 ORDER BY position`, id)
 	if err != nil {
@@ -71,6 +85,41 @@ func (c *Catalog) Episode(ctx context.Context, id string) (service.Episode, erro
 		return service.Episode{}, fmt.Errorf("lecture des sources: %w", err)
 	}
 	return episode, nil
+}
+
+// Filtres de themesByEpisode : des constantes, jamais une valeur venue de la requête (celle-ci passe par $1).
+const (
+	themesOfLang    = "et.lang = $1"
+	themesOfEpisode = "et.episode_id = $1"
+)
+
+// themesByEpisode lit les thèmes des épisodes retenus par filter, rangés par épisode
+// et dans l'ordre d'affichage des thèmes.
+func (c *Catalog) themesByEpisode(ctx context.Context, filter, arg string) (map[string][]service.ThemeRef, error) {
+	rows, err := c.pool.Query(ctx, `
+		SELECT et.episode_id, t.id, t.title, t.position
+		FROM episode_themes et
+		JOIN themes t ON t.id = et.theme_id
+		WHERE `+filter+`
+		ORDER BY t.position`, arg)
+	if err != nil {
+		return nil, fmt.Errorf("lecture des thèmes: %w", err)
+	}
+	defer rows.Close()
+
+	themes := make(map[string][]service.ThemeRef)
+	for rows.Next() {
+		var episodeID string
+		var theme service.ThemeRef
+		if err := rows.Scan(&episodeID, &theme.ID, &theme.Title, &theme.Position); err != nil {
+			return nil, fmt.Errorf("lecture des thèmes: %w", err)
+		}
+		themes[episodeID] = append(themes[episodeID], theme)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("lecture des thèmes: %w", err)
+	}
+	return themes, nil
 }
 
 // scanSummary lit les colonnes de summaryColumns, puis celles passées dans extra.

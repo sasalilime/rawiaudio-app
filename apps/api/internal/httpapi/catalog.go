@@ -25,6 +25,12 @@ type seriesRefResponse struct {
 	Title string `json:"title"`
 }
 
+type themeRefResponse struct {
+	ID       string `json:"id"`
+	Title    string `json:"title"`
+	Position int    `json:"position"`
+}
+
 type episodeSummaryResponse struct {
 	ID              string             `json:"id"`
 	Number          int                `json:"number"`
@@ -34,6 +40,7 @@ type episodeSummaryResponse struct {
 	DurationSeconds int                `json:"durationSeconds"`
 	PublishedAt     *time.Time         `json:"publishedAt"`
 	Series          *seriesRefResponse `json:"series"` // null pour un épisode hors série
+	Themes          []themeRefResponse `json:"themes"` // [] et jamais null
 }
 
 type sourceResponse struct {
@@ -135,6 +142,10 @@ func toSummaryResponse(episode service.EpisodeSummary) episodeSummaryResponse {
 		Title:           episode.Title,
 		Reference:       episode.Reference,
 		DurationSeconds: episode.DurationSeconds,
+		Themes:          make([]themeRefResponse, 0, len(episode.Themes)),
+	}
+	for _, theme := range episode.Themes {
+		response.Themes = append(response.Themes, themeRefResponse{ID: theme.ID, Title: theme.Title, Position: theme.Position})
 	}
 	if episode.PublishedAt != nil {
 		// pgx rend l'heure dans le fuseau de la machine : toujours UTC dans l'API, quel que soit le serveur.

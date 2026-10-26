@@ -43,10 +43,12 @@ var episodeOne = service.EpisodeSummary{
 	ID: "fr-001", Number: 1, Slug: "un", Title: "Un", Reference: "Réf 1", DurationSeconds: 392,
 	PublishedAt: &publishedAt,
 	Series:      &service.SeriesRef{ID: "fr-al-kahf", Title: "Al-Kahf"},
+	Themes:      []service.ThemeRef{{ID: "fr-histoires-du-coran", Title: "Histoires du Coran", Position: 1}},
 }
 
 const episodeOneJSON = `{"id": "fr-001", "number": 1, "slug": "un", "title": "Un", "reference": "Réf 1",
-	"durationSeconds": 392, "publishedAt": "2026-10-16T00:00:00Z", "series": {"id": "fr-al-kahf", "title": "Al-Kahf"}}`
+	"durationSeconds": 392, "publishedAt": "2026-10-16T00:00:00Z", "series": {"id": "fr-al-kahf", "title": "Al-Kahf"},
+	"themes": [{"id": "fr-histoires-du-coran", "title": "Histoires du Coran", "position": 1}]}`
 
 // serve passe par NewRouter pour tester aussi le routage et la lecture de {id}.
 func serve(catalog catalogReader, target string) *httptest.ResponseRecorder {
@@ -129,6 +131,7 @@ func TestListEpisodes(t *testing.T) {
 func TestGetEpisode(t *testing.T) {
 	withoutSeries := episodeOne
 	withoutSeries.Series = nil
+	withoutSeries.Themes = nil // aucun thème : [] attendu, jamais null
 
 	tests := []struct {
 		name     string
@@ -151,8 +154,10 @@ func TestGetEpisode(t *testing.T) {
 			name:     "hors série, sans résumé ni source : null et listes vides",
 			catalog:  fakeCatalog{episode: service.Episode{EpisodeSummary: withoutSeries}},
 			wantCode: http.StatusOK,
-			wantBody: strings.Replace(strings.TrimSuffix(episodeOneJSON, "}"),
-				`{"id": "fr-al-kahf", "title": "Al-Kahf"}`, "null", 1) + `, "summary": [], "sources": []}`,
+			wantBody: strings.Replace(strings.Replace(strings.TrimSuffix(episodeOneJSON, "}"),
+				`{"id": "fr-al-kahf", "title": "Al-Kahf"}`, "null", 1),
+				`[{"id": "fr-histoires-du-coran", "title": "Histoires du Coran", "position": 1}]`, "[]", 1) +
+				`, "summary": [], "sources": []}`,
 		},
 		{
 			name:     "inconnu ou pas encore publié",
