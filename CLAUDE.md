@@ -41,11 +41,19 @@ docs/adr/    décisions d'architecture
 - Tests : `testing` de la stdlib. Avant chaque commit : `go vet ./...`, `go test -race ./...`, `govulncheck ./...`.
 
 ## PWA (`apps/web`)
-- React + Vite + TypeScript strict. Composants fonctionnels, logique séparée de l'UI (hooks / modules purs).
+- React + Vite + TypeScript strict. Composants fonctionnels.
+- Clean Architecture (ADR-0004), dans `src/` :
+  - `core/domain` : entités et règles métier pures ; `core/ports` : interfaces vers l'extérieur ; `core/useCases` : une fonction par action.
+  - `infra/` : implémente les ports (`http/`, puis `audio/`, `offline/`).
+  - `ui/` : React (`pages/`, `components/`, `hooks/`, `i18n/`).
+  - `main.tsx` : seul point d'assemblage.
+  - `core` n'importe rien hors de `core` ; `ui` et `infra` ne s'importent pas. `src/architecture.test.ts` le vérifie.
+  - Fabriques de fonctions plutôt que classes (`erasableSyntaxOnly` : Node lance les tests sans compiler).
+- Tests : `node --test` (Node lit le TypeScript), sur les modules purs. Pas de Vitest (trop de dépendances).
 - Service worker et manifest écrits à la main (pas de `vite-plugin-pwa` : trop de dépendances via workbox).
 - Audio : un seul élément `<audio>`, jamais Web Audio. Gestionnaires Media Session enregistrés dans l'événement `playing`.
 - Hors ligne : cache par identifiant d'épisode, jamais par URL (les URLs signées changent). Réponses 206 depuis le cache pour les requêtes Range.
-- Types de l'API alignés sur `contracts/openapi.yaml` (outil de génération à choisir ; en attendant, types écrits à la main dans `src/api/types.ts`).
+- Types de l'API alignés sur `contracts/openapi.yaml` (outil de génération à choisir ; en attendant, types écrits à la main dans `src/infra/http/types.ts`, traduits en entités de `core/domain` par `infra/http`).
 
 ## Audio
 - Cloudflare R2, bucket privé, juridiction EU. Clés : `<langue>/<numéro>-<slug>/audio-128.mp3`.
