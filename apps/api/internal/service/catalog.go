@@ -1,0 +1,96 @@
+// Package service contient la logique métier de l'API. Il n'importe jamais net/http.
+package service
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"time"
+)
+
+// ErrNotFound : la ressource n'existe pas, ou n'est pas visible (épisode pas encore publié).
+var ErrNotFound = errors.New("introuvable")
+
+// SeriesRef identifie la série d'un épisode.
+type SeriesRef struct {
+	ID    string
+	Title string
+}
+
+// EpisodeSummary est un épisode tel qu'il apparaît dans la liste du catalogue.
+type EpisodeSummary struct {
+	ID              string
+	Number          int
+	Slug            string
+	Title           string
+	Reference       string
+	DurationSeconds int
+	PublishedAt     *time.Time // nil : pas de date de publication (brouillon)
+	Series          *SeriesRef // nil : épisode hors série
+}
+
+// Source est un passage d'un livre de Shamela, cité sous l'épisode.
+type Source struct {
+	Label string
+	URL   string
+}
+
+// Episode est la fiche complète d'un épisode.
+type Episode struct {
+	EpisodeSummary
+	Summary []string
+	Sources []Source
+}
+
+// EpisodeStore lit les épisodes en base, publiés ou non : la visibilité se décide ici, pas dans le SQL.
+// Implémenté par repository.Catalog.
+type EpisodeStore interface {
+	// Episodes renvoie les épisodes d'une langue, du plus récent au plus ancien.
+	Episodes(ctx context.Context, lang string) ([]EpisodeSummary, error)
+	// Episode renvoie ErrNotFound si l'identifiant n'existe pas.
+	Episode(ctx context.Context, id string) (Episode, error)
+}
+
+// Catalog sert le catalogue en lecture : uniquement les épisodes publiés.
+type Catalog struct {
+	store EpisodeStore
+	now   func() time.Time // time.Now en production, une heure fixe dans les tests
+}
+
+func NewCatalog(store EpisodeStore, now func() time.Time) *Catalog {
+	return &Catalog{store: store, now: now}
+}
+
+// Episodes renvoie les épisodes publiés d'une langue, du plus récent au plus ancien.
+func (c *Catalog) Episodes(ctx context.Context, lang string) ([]EpisodeSummary, error) {
+	all, err := c.store.Episodes(ctx, lang)
+	if err != nil {
+		return nil, fmt.Errorf("liste des épisodes: %w", err)
+	}
+	now := c.now()
+	published := []EpisodeSummary{} // jamais nil : une slice nil s'encode en null en JSON, pas en []
+	for _, episode := range all {
+		if isPublished(episode, now) {
+			published = append(published, episode)
+		}
+	}
+	return published, nil
+}
+
+// Episode renvoie ErrNotFound si l'épisode n'existe pas ou n'est pas encore publié :
+// un épisode programmé ne doit pas se deviner.
+func (c *Catalog) Episode(ctx context.Context, id string) (Episode, error) {
+	episode, err := c.store.Episode(ctx, id)
+	if err != nil {
+		return Episode{}, fmt.Errorf("épisode %s: %w", id, err)
+	}
+	if !isPublished(episode.EpisodeSummary, c.now()) {
+		return Episode{}, ErrNotFound
+	}
+	return episode, nil
+}
+
+// isPublished : un épisode devient visible à sa date de publication, jamais avant.
+func isPublished(episode EpisodeSummary, now time.Time) bool {
+	return episode.PublishedAt != nil && !episode.PublishedAt.After(now)
+}
