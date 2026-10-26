@@ -15,6 +15,8 @@ type config struct {
 	R2Bucket          string
 	R2AccessKeyID     string
 	R2SecretAccessKey string // ne jamais le logger
+	// Facultatif : l'origine de la PWA autorisée en CORS (https://app.rawiaudio.com en prod, vide en dev).
+	CORSAllowedOrigin string
 }
 
 func loadConfig() (config, error) {
@@ -25,6 +27,7 @@ func loadConfig() (config, error) {
 		R2Bucket:          os.Getenv("R2_BUCKET"),
 		R2AccessKeyID:     os.Getenv("R2_ACCESS_KEY_ID"),
 		R2SecretAccessKey: os.Getenv("R2_SECRET_ACCESS_KEY"),
+		CORSAllowedOrigin: os.Getenv("CORS_ALLOWED_ORIGIN"),
 	}
 	if cfg.Port == "" {
 		cfg.Port = "8080"

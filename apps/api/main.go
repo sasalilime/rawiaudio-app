@@ -65,7 +65,7 @@ func run() error {
 	// Sans ces timeouts, un client lent garde une connexion ouverte indéfiniment.
 	srv := &http.Server{
 		Addr:              ":" + cfg.Port,
-		Handler:           httpapi.NewRouter(pool.Ping, catalog),
+		Handler:           httpapi.CORS(cfg.CORSAllowedOrigin)(httpapi.NewRouter(pool.Ping, catalog)),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       10 * time.Second,
 		WriteTimeout:      15 * time.Second,
