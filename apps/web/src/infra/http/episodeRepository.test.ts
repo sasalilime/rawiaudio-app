@@ -24,7 +24,7 @@ const episodeDto = {
   reference: 'Réf 1',
   durationSeconds: 392,
   publishedAt: '2026-10-16T00:00:00Z',
-  series: { id: 'fr-al-kahf', title: 'Al-Kahf' },
+  series: { id: 'fr-moussa', title: 'Moussa et Pharaon', part: 2 },
   themes: [{ id: 'fr-prophetes', title: 'Les prophètes', position: 2 }],
 }
 
@@ -42,7 +42,7 @@ test('traduit une fiche en entité', async () => {
     json(200, { ...episodeDto, summary: ['p1'], sources: [{ label: 'Saadi', url: 'https://shamela.ws/book/42' }] }),
   ).get('fr-001')
 
-  assert.deepEqual(episode.series, { id: 'fr-al-kahf', title: 'Al-Kahf' })
+  assert.deepEqual(episode.series, { id: 'fr-moussa', title: 'Moussa et Pharaon', part: 2 })
   assert.deepEqual(episode.summary, ['p1'])
   assert.deepEqual(episode.sources, [{ label: 'Saadi', url: 'https://shamela.ws/book/42' }])
 })

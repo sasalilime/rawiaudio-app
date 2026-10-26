@@ -1,5 +1,6 @@
 import type { EpisodeSummary } from '../domain/episode.ts'
 import { PlaybackBlockedError } from '../domain/errors.ts'
+import { isHeard } from '../domain/listening.ts'
 import { clampPosition, isUrlUsable, resumePosition, type AudioUrl } from '../domain/playback.ts'
 import type { AudioPlayer, TrackMetadata } from '../ports/audioPlayer.ts'
 import type { EpisodeRepository } from '../ports/episodeRepository.ts'
@@ -37,6 +38,10 @@ export interface PlaybackDeps {
   describe: (episode: EpisodeSummary) => TrackMetadata
   /** Adresse de la copie téléchargée, ou null : toujours préférée au réseau, même en ligne. */
   localSource: (episodeId: string) => string | null
+  /** La partie suivante de la même série, enchaînée à la fin de celle-ci ; null pour une histoire indépendante. */
+  nextPart: (episode: EpisodeSummary) => EpisodeSummary | null
+  /** Appelée une fois par écoute, quand l'épisode compte comme entendu (95 %, ADR-0007). */
+  onHeard: (episodeId: string) => void
 }
 
 /** Intervalle minimal entre deux enregistrements de la position pendant la lecture. */
@@ -46,13 +51,15 @@ const SAVE_INTERVAL_MS = 5_000
 const NEVER = new Date(8.64e15)
 
 /** La lecture d'un épisode à la fois, pour toute l'appli. */
-export function createPlaybackSession({ episodes, player, positions, now, describe, localSource }: PlaybackDeps): PlaybackSession {
+export function createPlaybackSession(deps: PlaybackDeps): PlaybackSession {
+  const { episodes, player, positions, now, describe, localSource, nextPart, onHeard } = deps
   const urls = new Map<string, AudioUrl>() // dernière URL obtenue, par épisode
   const requests = new Map<string, Promise<AudioUrl>>() // demandes en cours, pour ne pas les doubler
   // Épisode chargé dans le lecteur ; null pendant qu'on attend une URL.
   let current: { episode: EpisodeSummary; url: AudioUrl } | null = null
   let snapshot: PlaybackSnapshot = { episode: null, status: 'idle', position: 0 }
   let lastSave = 0
+  let heardReported = false // une seule annonce « entendu » par écoute
   const listeners = new Set<() => void>()
 
   // React compare les instantanés par référence : un nouvel objet à chaque changement, jamais de mutation.
@@ -100,9 +107,34 @@ export function createPlaybackSession({ episodes, player, positions, now, descri
   // Charge et lance aussitôt : rien n'est attendu entre le geste de l'utilisateur et player.play().
   function start(episode: EpisodeSummary, url: AudioUrl, startAt: number) {
     current = { episode, url }
+    heardReported = false
     player.load(url.url, startAt, describe(episode))
     update({ episode, status: 'loading', position: startAt })
     playNow(episode)
+    // La partie suivante prête d'avance : l'enchaînement n'aura rien à attendre.
+    const next = nextPart(episode)
+    if (next) prepare(next)
+  }
+
+  // Lance un épisode depuis sa position de reprise, de préférence depuis la copie téléchargée.
+  function begin(episode: EpisodeSummary) {
+    const startAt = resumePosition(positions.get(episode.id), episode.durationSeconds)
+    const local = localSource(episode.id)
+    const url = local ? { url: local, expiresAt: NEVER } : usableUrl(episode.id)
+    if (url) start(episode, url, startAt)
+    else startAfterFetch(episode, startAt)
+  }
+
+  function prepare(episode: EpisodeSummary) {
+    if (localSource(episode.id)) return
+    // Échec ignoré exprès : play redemandera l'URL et affichera l'erreur s'il le faut.
+    fetchUrl(episode.id).catch(() => undefined)
+  }
+
+  function reportHeard(episode: EpisodeSummary) {
+    if (heardReported) return
+    heardReported = true
+    onHeard(episode.id)
   }
 
   // Sans URL utilisable, il faut d'abord en demander une : iOS peut alors refuser le son (statut blocked).
@@ -154,14 +186,22 @@ export function createPlaybackSession({ episodes, player, positions, now, descri
         savePosition()
         update({ status: 'paused', position: player.position() })
         return
-      case 'time':
-        update({ position: player.position() })
+      case 'time': {
+        const position = player.position()
+        update({ position })
         if (now().getTime() - lastSave >= SAVE_INTERVAL_MS) savePosition()
+        if (isHeard(position, episode.durationSeconds)) reportHeard(episode)
         return
-      case 'ended':
+      }
+      case 'ended': {
         positions.clear(episode.id)
-        update({ status: 'ended', position: episode.durationSeconds })
+        reportHeard(episode)
+        // Lecture enchaînée : la partie suivante de la même série, jamais une autre histoire (ADR-0007).
+        const next = nextPart(episode)
+        if (next) begin(next)
+        else update({ status: 'ended', position: episode.durationSeconds })
         return
+      }
       case 'error':
         // Le plus souvent, l'URL a expiré pendant une longue pause : une seule tentative avec une URL neuve.
         if (isUrlUsable(url, now())) update({ status: 'error' })
@@ -176,11 +216,7 @@ export function createPlaybackSession({ episodes, player, positions, now, descri
       listeners.add(listener)
       return () => listeners.delete(listener)
     },
-    prepare(episode) {
-      if (localSource(episode.id)) return
-      // Échec ignoré exprès : play redemandera l'URL et affichera l'erreur s'il le faut.
-      fetchUrl(episode.id).catch(() => undefined)
-    },
+    prepare,
     resumeAt: (episode) => resumePosition(positions.get(episode.id), episode.durationSeconds),
     play(episode) {
       if (snapshot.episode?.id === episode.id && snapshot.status !== 'idle') {
@@ -189,11 +225,7 @@ export function createPlaybackSession({ episodes, player, positions, now, descri
       }
       savePosition()
       if (current) player.pause()
-      const startAt = resumePosition(positions.get(episode.id), episode.durationSeconds)
-      const local = localSource(episode.id)
-      const url = local ? { url: local, expiresAt: NEVER } : usableUrl(episode.id)
-      if (url) start(episode, url, startAt)
-      else startAfterFetch(episode, startAt)
+      begin(episode)
     },
     toggle() {
       if (snapshot.status === 'playing') {

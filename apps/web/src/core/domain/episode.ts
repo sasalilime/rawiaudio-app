@@ -2,9 +2,12 @@
 
 export type Lang = 'fr' | 'ar' | 'en'
 
+/** La série (une histoire en plusieurs parties) d'un épisode, et sa place dans celle-ci. */
 export interface SeriesRef {
   id: string
   title: string
+  /** Numéro de la partie : 1, 2, 3… */
+  part: number
 }
 
 export interface ThemeRef {

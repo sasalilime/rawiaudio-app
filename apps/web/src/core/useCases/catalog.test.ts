@@ -52,7 +52,11 @@ test('en ligne : la liste vient de l’API, est gardée pour plus tard, et revie
   const cache = memoryCache()
 
   const catalog = await createListCatalog(repository(async () => [summary]), cache)('fr')
-  assert.deepEqual(catalog, { latest: summary, sections: [{ theme: null, episodes: [summary] }] })
+  assert.deepEqual(catalog, {
+    episodes: [summary],
+    latest: summary,
+    sections: [{ theme: null, items: [{ kind: 'episode', episode: summary }] }],
+  })
   assert.deepEqual(cache.lists.get('fr'), [summary])
 })
 

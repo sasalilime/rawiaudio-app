@@ -29,7 +29,7 @@ const fiche: Episode = {
   reference: 'Réf 1',
   durationSeconds: 392,
   publishedAt: new Date('2026-10-16T00:00:00Z'),
-  series: { id: 'fr-al-kahf', title: 'Al-Kahf' },
+  series: { id: 'fr-moussa', title: 'Moussa et Pharaon', part: 2 },
   themes: [{ id: 'fr-histoires-du-coran', title: 'Histoires du Coran', position: 1 }],
   summary: ['p'],
   sources: [{ label: 'Saadi', url: 'https://shamela.ws/book/42' }],

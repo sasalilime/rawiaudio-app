@@ -1,7 +1,11 @@
+import { findSeries, nextPart } from '../../core/domain/catalog.ts'
+import type { Episode } from '../../core/domain/episode.ts'
 import { NotFoundError } from '../../core/domain/errors.ts'
 import { formatDuration } from '../format.ts'
 import { fr } from '../i18n/fr.ts'
+import { useCatalog } from '../hooks/useCatalog.ts'
 import { Link } from '../navigation.tsx'
+import { episodePath, seriesPath } from '../router.ts'
 import { PageTitle } from '../components/PageTitle.tsx'
 import { DownloadButton } from '../components/DownloadButton.tsx'
 import { PlayButton } from '../components/PlayButton.tsx'
@@ -29,7 +33,7 @@ export function EpisodePage({ id }: { id: string }) {
           </PageTitle>
           <p className="episode-meta">{state.data.reference}</p>
           <p className="episode-meta">{formatDuration(state.data.durationSeconds)}</p>
-          {state.data.series && <p className="episode-meta">{fr.series(state.data.series.title)}</p>}
+          <SeriesInfo episode={state.data} />
           {state.data.themes.length > 0 && (
             <p className="episode-meta">{fr.themes(state.data.themes.map((theme) => theme.title))}</p>
           )}
@@ -84,5 +88,32 @@ function EpisodeError({ error, retry }: { error: unknown; retry: () => void }) {
         {fr.retry}
       </button>
     </div>
+  )
+}
+
+/** Pour une partie de série : sa place dans la série, le lien vers la série et vers la partie suivante. */
+function SeriesInfo({ episode }: { episode: Episode }) {
+  const [catalog] = useCatalog('fr')
+  if (!episode.series) return null
+
+  // Le catalogue donne le nombre de parties et la suivante ; sans lui (hors ligne, rien gardé), le numéro seul.
+  const episodes = catalog.status === 'ok' ? catalog.data.episodes : []
+  const total = findSeries(episodes, episode.series.id)?.parts.length
+  const next = nextPart(episodes, episode)
+
+  return (
+    <>
+      <p className="episode-meta">
+        {total ? fr.partOfTotal(episode.series.part, total) : fr.partNumber(episode.series.part)}
+      </p>
+      <p className="episode-links">
+        <Link href={seriesPath(episode.series.id)}>{fr.seriesLink(episode.series.title)}</Link>
+      </p>
+      {next && (
+        <p className="episode-links">
+          <Link href={episodePath(next.id)}>{fr.nextPartLink(next.title)}</Link>
+        </p>
+      )}
+    </>
   )
 }

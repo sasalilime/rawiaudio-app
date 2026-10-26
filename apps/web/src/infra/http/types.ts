@@ -6,6 +6,7 @@ export type Lang = 'fr' | 'ar' | 'en'
 export interface SeriesRef {
   id: string
   title: string
+  part: number
 }
 
 export interface ThemeRef {

@@ -1,6 +1,8 @@
 import { fr } from '../i18n/fr.ts'
 import { EpisodeRow } from '../components/EpisodeRow.tsx'
 import { PageTitle } from '../components/PageTitle.tsx'
+import { RandomButton } from '../components/RandomButton.tsx'
+import { SeriesRow } from '../components/SeriesRow.tsx'
 import { useCatalog } from '../hooks/useCatalog.ts'
 
 export function CatalogPage() {
@@ -25,6 +27,8 @@ export function CatalogPage() {
       {state.status === 'ok' && !state.data.latest && <p className="notice">{fr.emptyCatalog}</p>}
       {state.status === 'ok' && state.data.latest && (
         <>
+          <RandomButton episodes={state.data.episodes} />
+
           <section className="latest" aria-labelledby="latest-title">
             <h2 id="latest-title" className="section-title">
               {fr.latestEpisode}
@@ -40,11 +44,17 @@ export function CatalogPage() {
                   {section.theme?.title ?? fr.otherStories}
                 </h2>
                 <ol className="episodes">
-                  {section.episodes.map((episode) => (
-                    <li key={episode.id}>
-                      <EpisodeRow episode={episode} />
-                    </li>
-                  ))}
+                  {section.items.map((item) =>
+                    item.kind === 'series' ? (
+                      <li key={item.series.id}>
+                        <SeriesRow series={item.series} />
+                      </li>
+                    ) : (
+                      <li key={item.episode.id}>
+                        <EpisodeRow episode={item.episode} />
+                      </li>
+                    ),
+                  )}
                 </ol>
               </section>
             )

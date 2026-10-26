@@ -381,3 +381,54 @@ button.secondary {
 .latest .episode-row {
   border-block: 1px solid var(--ambre);
 }
+
+/* « Une histoire au hasard » : pleine largeur, au-dessus du dernier épisode */
+.random-button {
+  display: block;
+  width: 100%;
+  margin-block: 0 2rem;
+  padding-block: 0.8rem;
+  font-size: 1.1rem;
+}
+
+/* Marques « Écouté » et « Téléchargé » d'une ligne */
+.episode-marks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+}
+
+.episode-heard {
+  color: var(--brume);
+  font-size: 0.9rem;
+}
+
+/* Une série : le nombre de parties à la place du numéro d'épisode */
+.series-count {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.series-count-label {
+  color: var(--ambre);
+  font-size: 0.8rem;
+  line-height: 1;
+}
+
+/* Page d'une série */
+.series-next {
+  margin-block: 1.5rem 0;
+  font-family: var(--titre);
+  font-size: 1.2rem;
+}
+
+.series-parts {
+  margin-block-start: 2rem;
+}
+
+/* Liens de la fiche d'une partie : la série entière, la partie suivante */
+.episode-links {
+  margin: 0.25rem 0 0;
+  font-size: 0.95rem;
+}

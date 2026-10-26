@@ -22,7 +22,8 @@ const episode = (id: string): EpisodeSummary => ({
 // Laisse s'exécuter les promesses en attente (réponse de l'API simulée).
 const flush = () => new Promise((resolve) => setImmediate(resolve))
 
-function setup(saved: Record<string, number> = {}, downloaded: string[] = []) {
+// series : identifiants des parties d'une même série, dans l'ordre (pour la lecture enchaînée).
+function setup(saved: Record<string, number> = {}, downloaded: string[] = [], series: string[] = []) {
   let clock = new Date('2026-10-26T12:00:00Z').getTime()
   const calls: string[] = []
   let urlCount = 0
@@ -63,6 +64,7 @@ function setup(saved: Record<string, number> = {}, downloaded: string[] = []) {
     },
   }
   const store = new Map(Object.entries(saved))
+  const heard: string[] = []
   const saves: string[] = []
   const session = createPlaybackSession({
     episodes,
@@ -80,12 +82,18 @@ function setup(saved: Record<string, number> = {}, downloaded: string[] = []) {
     now: () => new Date(clock),
     describe: (e) => ({ title: e.title, artist: 'Rawi Audio', artworkUrl: '/icon.png' }),
     localSource: (id) => (downloaded.includes(id) ? `/offline/${id}` : null),
+    nextPart: (e) => {
+      const next = series[series.indexOf(e.id) + 1]
+      return series.includes(e.id) && next ? episode(next) : null
+    },
+    onHeard: (id) => heard.push(id),
   })
   return {
     session,
     calls,
     saves,
     store,
+    heard,
     urlCount: () => urlCount,
     emit: (event: PlayerEvent) => listener(event),
     setPosition: (seconds: number) => {
@@ -257,4 +265,41 @@ test("épisode téléchargé : lu depuis la copie locale, sans demander d'URL à
   t.session.toggle()
   assert.deepEqual(t.calls, ['play'])
   assert.equal(t.urlCount(), 0)
+})
+
+test('entendu une seule fois, dès 95 % de la durée', async () => {
+  const t = setup()
+  t.session.play(episode('fr-001'))
+  await flush()
+
+  for (const at of [100, 373, 380]) {
+    t.setPosition(at) // 95 % de 392 s = 372,4 s
+    t.emit('time')
+  }
+  t.emit('ended')
+  assert.deepEqual(t.heard, ['fr-001'])
+})
+
+test("série : la partie suivante est préparée dès le début, puis enchaînée à la fin, sans attente", async () => {
+  const t = setup({}, [], ['fr-001', 'fr-002'])
+  t.session.play(episode('fr-001'))
+  await flush()
+  assert.equal(t.urlCount(), 2) // l'URL de la partie 2 est déjà demandée
+
+  t.calls.length = 0
+  t.emit('ended')
+  // Vérifié aussitôt : la partie 2 démarre pendant l'événement de fin, sans rien attendre.
+  assert.deepEqual(t.calls, ['load https://r2/fr-002?v=2 @0 Titre fr-002', 'play'])
+  assert.equal(t.session.getSnapshot().episode?.id, 'fr-002')
+})
+
+test("dernière partie, ou histoire indépendante : la lecture s'arrête", async () => {
+  const t = setup({}, [], ['fr-001', 'fr-002'])
+  t.session.play(episode('fr-002'))
+  await flush()
+
+  t.calls.length = 0
+  t.emit('ended')
+  assert.deepEqual(t.calls, [])
+  assert.equal(t.session.getSnapshot().status, 'ended')
 })
