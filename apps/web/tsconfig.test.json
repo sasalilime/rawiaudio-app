@@ -1,0 +1,10 @@
+// Vérification des tests : mêmes règles que l'appli, plus les types de Node (node:test, node:fs…).
+// À part de tsconfig.json pour que le code de l'appli ne puisse pas utiliser process ou Buffer par erreur.
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["vite/client", "node"]
+  },
+  "include": ["src"],
+  "exclude": []
+}

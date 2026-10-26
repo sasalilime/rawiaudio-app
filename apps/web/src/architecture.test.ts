@@ -17,8 +17,8 @@ const RULES: Record<string, { allowed: string[]; packages: boolean }> = {
 // import … from '…', export … from '…', import '…' : suffit pour du code écrit à la main, sans import dynamique.
 const IMPORT = /^\s*(?:import|export)\s(?:[^'"]*\sfrom\s)?['"]([^'"]+)['"]/gm
 
-function importsOf(file: string): string[] {
-  return [...readFileSync(file, 'utf8').matchAll(IMPORT)].map((match) => match[1] ?? '')
+function importsIn(source: string): string[] {
+  return [...source.matchAll(IMPORT)].map((match) => match[1] ?? '')
 }
 
 function violations(): string[] {
@@ -28,7 +28,7 @@ function violations(): string[] {
       .filter((file) => /\.tsx?$/.test(file) && !file.endsWith('.test.ts'))
     for (const file of files) {
       const path = join(SRC, layer, file)
-      for (const specifier of importsOf(path)) {
+      for (const specifier of importsIn(readFileSync(path, 'utf8'))) {
         const where = `${relative(SRC, path)} importe « ${specifier} »`
         if (!specifier.startsWith('.')) {
           if (!rule.packages) found.push(where)
@@ -46,9 +46,15 @@ test('chaque couche respecte la règle de dépendance', () => {
   assert.deepEqual(violations(), [])
 })
 
-test('le contrôle repère bien un import interdit', () => {
-  assert.deepEqual(
-    importsOf(join(SRC, 'main.tsx')).filter((s) => s.startsWith('./infra')),
-    ['./infra/http/apiClient.ts', './infra/http/episodeRepository.ts'],
-  )
+test('la lecture des imports reconnaît toutes les formes écrites dans le projet', () => {
+  const source = [
+    "import { a } from './a.ts'",
+    "import type { B } from '../b.ts'",
+    'export { c } from "./c.ts"',
+    "import './styles.css'",
+    'import {',
+    '  d,',
+    "} from 'react'",
+  ].join('\n')
+  assert.deepEqual(importsIn(source), ['./a.ts', '../b.ts', './c.ts', './styles.css', 'react'])
 })

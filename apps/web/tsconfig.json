@@ -19,6 +19,6 @@
     "skipLibCheck": true
   },
   "include": ["src", "vite.config.ts"],
-  // ponytail: tests non vérifiés par tsc (il faudrait @types/node) ; Node les lance quand même.
+  // Tests vérifiés à part, avec les types de Node : tsconfig.test.json.
   "exclude": ["src/**/*.test.ts"]
 }
