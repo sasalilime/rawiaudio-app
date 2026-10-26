@@ -31,6 +31,10 @@ cp .env.example .env    # puis changer le mot de passe sur ses trois lignes
   ```
 
 Les migrations de `migrations/` s'appliquent au démarrage de l'API.
+Données de développement (après un premier démarrage, rejouable) :
+```bash
+docker compose exec -T db psql -U rawi -d rawi -v ON_ERROR_STOP=1 < dev/seed.sql
+```
 
 ### Avant chaque commit
 ```bash

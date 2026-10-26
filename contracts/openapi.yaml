@@ -31,8 +31,166 @@ paths:
                 $ref: "#/components/schemas/Health"
               example:
                 status: unavailable
+  /episodes:
+    get:
+      operationId: listEpisodes
+      summary: Épisodes publiés d'une langue, du plus récent au plus ancien
+      security: []
+      parameters:
+        - name: lang
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/Lang"
+      responses:
+        "200":
+          description: Les épisodes publiés (liste vide s'il n'y en a aucun).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EpisodeList"
+        "400":
+          $ref: "#/components/responses/InvalidRequest"
+        "500":
+          $ref: "#/components/responses/Internal"
+  /episodes/{id}:
+    get:
+      operationId: getEpisode
+      summary: Un épisode publié, avec son résumé et ses sources
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Identifiant public immuable, langue et numéro sur 3 chiffres.
+          schema:
+            type: string
+            example: fr-001
+      responses:
+        "200":
+          description: L'épisode.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Episode"
+        "404":
+          description: Épisode inconnu, ou pas encore publié.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: not_found
+        "500":
+          $ref: "#/components/responses/Internal"
 components:
+  responses:
+    InvalidRequest:
+      description: Requête invalide (paramètre absent ou inconnu).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: invalid_request
+    Internal:
+      description: Erreur interne, sans détail.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: internal
   schemas:
+    Error:
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error:
+          type: string
+          enum: [invalid_request, not_found, internal]
+    Lang:
+      type: string
+      enum: [fr, ar, en]
+    SeriesRef:
+      type: object
+      additionalProperties: false
+      required: [id, title]
+      properties:
+        id:
+          type: string
+          example: fr-al-kahf
+        title:
+          type: string
+    EpisodeSummary:
+      type: object
+      unevaluatedProperties: false
+      required: [id, number, slug, title, reference, durationSeconds, publishedAt, series]
+      properties:
+        id:
+          type: string
+          example: fr-001
+        number:
+          type: integer
+          minimum: 1
+        slug:
+          type: string
+          example: les-gens-de-la-caverne
+        title:
+          type: string
+        reference:
+          type: string
+          description: Référence coranique, affichée telle quelle.
+          example: Sourate Al-Kahf, versets 9 à 26
+        durationSeconds:
+          type: integer
+          minimum: 1
+        publishedAt:
+          type: string
+          format: date-time
+        series:
+          description: La série de l'épisode, ou null s'il n'en a pas.
+          anyOf:
+            - $ref: "#/components/schemas/SeriesRef"
+            - type: "null"
+    Episode:
+      allOf:
+        - $ref: "#/components/schemas/EpisodeSummary"
+        - type: object
+          required: [summary, sources]
+          properties:
+            summary:
+              type: array
+              description: Paragraphes recopiés de la fiche validée du studio.
+              items:
+                type: string
+            sources:
+              type: array
+              items:
+                $ref: "#/components/schemas/Source"
+      unevaluatedProperties: false
+    Source:
+      type: object
+      additionalProperties: false
+      required: [label, url]
+      properties:
+        label:
+          type: string
+          description: Livre, tome et page, affichés tels quels.
+        url:
+          type: string
+          description: Lien Shamela uniquement (matrice studio/docs/sources.md).
+          pattern: "^https://shamela\\.ws/book/[0-9]+(/[0-9]+)?$"
+    EpisodeList:
+      type: object
+      additionalProperties: false
+      required: [episodes]
+      properties:
+        episodes:
+          type: array
+          items:
+            $ref: "#/components/schemas/EpisodeSummary"
     Health:
       type: object
       additionalProperties: false
