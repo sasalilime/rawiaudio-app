@@ -50,4 +50,4 @@ Après chaque test, « Copier le journal » et le coller dans une note : il date
 | 12 | Safari sans installer | refaire les tests 2, 3 et 8 dans Safari | à comparer : toutes les familles n'installeront pas l'appli | |
 
 ## Conclusions
-À remplir après les tests, puis à reporter dans un ADR « Lecture audio dans la PWA ».
+Voir [ADR-0002](../../docs/adr/0002-lecture-audio-pwa.md) : testé le 26 octobre 2026 sur iPhone 16e, iOS 27.0.1.

@@ -59,8 +59,8 @@
 - À revoir : outil de génération des types TS, choix de la bibliothèque audio pour Expo, besoin éventuel d'un routeur (chi), format d'échange entre `rawiaudio-studio` et l'appli (manifeste d'épisode).
 
 ## Actions
-1. [ ] Tests audio PWA sur iPhone (prototype jetable).
-2. [ ] Création du repo `rawiaudio-app`.
-3. [ ] Socle API (`/health`, config, migrations, Docker).
+1. [x] Tests audio PWA sur iPhone (prototype jetable) : voir ADR-0002.
+2. [x] Création du repo `rawiaudio-app`.
+3. [x] Socle API (`/health`, config, migrations, Docker).
 4. [ ] Socle ops sur le VPS (SSH, pare-feu, Caddy, sauvegardes, surveillance).
 5. [ ] Spec de la v1, puis tranche « catalogue + lecteur ».
