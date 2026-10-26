@@ -15,6 +15,7 @@ import (
 type catalogReader interface {
 	Episodes(ctx context.Context, lang string) ([]service.EpisodeSummary, error)
 	Episode(ctx context.Context, id string) (service.Episode, error)
+	AudioURL(ctx context.Context, id string) (service.AudioURL, error)
 }
 
 // Réponses JSON : elles suivent les schémas de contracts/openapi.yaml, champ par champ.
@@ -49,6 +50,11 @@ type episodeResponse struct {
 
 type episodeListResponse struct {
 	Episodes []episodeSummaryResponse `json:"episodes"`
+}
+
+type audioURLResponse struct {
+	URL       string    `json:"url"`
+	ExpiresAt time.Time `json:"expiresAt"`
 }
 
 // listEpisodesRequest : la requête de GET /episodes, validée avant tout appel au service.
@@ -100,6 +106,24 @@ func getEpisode(catalog catalogReader) http.HandlerFunc {
 			return
 		}
 		writeJSON(w, r, http.StatusOK, toEpisodeResponse(episode))
+	}
+}
+
+// getEpisodeAudio renvoie une URL signée, différente à chaque appel : aucun cache ne doit la garder.
+func getEpisodeAudio(catalog catalogReader) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-store")
+		audio, err := catalog.AudioURL(r.Context(), r.PathValue("id"))
+		if errors.Is(err, service.ErrNotFound) {
+			writeError(w, r, http.StatusNotFound, "not_found")
+			return
+		}
+		if err != nil {
+			slog.ErrorContext(r.Context(), "URL audio d'un épisode", "err", err)
+			writeError(w, r, http.StatusInternalServerError, "internal")
+			return
+		}
+		writeJSON(w, r, http.StatusOK, audioURLResponse{URL: audio.URL, ExpiresAt: audio.ExpiresAt.UTC()})
 	}
 }
 

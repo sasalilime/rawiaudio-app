@@ -19,6 +19,7 @@ import (
 type fakeCatalog struct {
 	episodes []service.EpisodeSummary
 	episode  service.Episode
+	audio    service.AudioURL
 	err      error
 }
 
@@ -28,6 +29,10 @@ func (f fakeCatalog) Episodes(context.Context, string) ([]service.EpisodeSummary
 
 func (f fakeCatalog) Episode(context.Context, string) (service.Episode, error) {
 	return f.episode, f.err
+}
+
+func (f fakeCatalog) AudioURL(context.Context, string) (service.AudioURL, error) {
+	return f.audio, f.err
 }
 
 // Heure de Paris : la réponse doit la ramener en UTC.
@@ -165,6 +170,47 @@ func TestGetEpisode(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			assertJSON(t, serve(tt.catalog, "/episodes/fr-001"), tt.wantCode, tt.wantBody)
+		})
+	}
+}
+
+func TestGetEpisodeAudio(t *testing.T) {
+	tests := []struct {
+		name     string
+		catalog  fakeCatalog
+		wantCode int
+		wantBody string
+	}{
+		{
+			name: "URL signée, expiration ramenée en UTC",
+			catalog: fakeCatalog{audio: service.AudioURL{
+				URL:       "https://compte.eu.r2.cloudflarestorage.com/rawi-audio/fr/001-un/audio-128.mp3?X-Amz-Signature=abc",
+				ExpiresAt: publishedAt,
+			}},
+			wantCode: http.StatusOK,
+			wantBody: `{"url": "https://compte.eu.r2.cloudflarestorage.com/rawi-audio/fr/001-un/audio-128.mp3?X-Amz-Signature=abc",
+				"expiresAt": "2026-10-16T00:00:00Z"}`,
+		},
+		{
+			name:     "inconnu ou pas encore publié",
+			catalog:  fakeCatalog{err: fmt.Errorf("épisode fr-002: %w", service.ErrNotFound)},
+			wantCode: http.StatusNotFound,
+			wantBody: `{"error": "not_found"}`,
+		},
+		{
+			name:     "erreur interne, sans détail",
+			catalog:  fakeCatalog{err: errors.New("connexion refusée")},
+			wantCode: http.StatusInternalServerError,
+			wantBody: `{"error": "internal"}`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rec := serve(tt.catalog, "/episodes/fr-001/audio")
+			assertJSON(t, rec, tt.wantCode, tt.wantBody)
+			if cc := rec.Header().Get("Cache-Control"); cc != "no-store" {
+				t.Errorf("Cache-Control = %q, attendu no-store", cc)
+			}
 		})
 	}
 }

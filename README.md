@@ -20,7 +20,7 @@ PWA, API, contrat OpenAPI et stack ops de Rawi.
 ### Démarrer en local
 ```bash
 cd apps/api
-cp .env.example .env    # puis changer le mot de passe sur ses trois lignes
+cp .env.example .env    # puis changer le mot de passe sur ses trois lignes, et remplir les variables R2
 ```
 - Tout dans Docker : `docker compose up -d --build`, puis `curl -i localhost:8080/health`.
 - Ou l'API avec `go run`, la base seule dans Docker :

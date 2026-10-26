@@ -63,7 +63,7 @@ func TestEpisodesReturnsAllOfOneLanguage(t *testing.T) {
 	if first.Series == nil || first.Series.ID != "fr-al-kahf" || first.Series.Title != "Al-Kahf" {
 		t.Errorf("fr-001 : série = %+v, attendu fr-al-kahf", first.Series)
 	}
-	if first.Number != 1 || first.Slug != "un" || first.DurationSeconds != 392 || first.Reference != "Réf 1" {
+	if first.Lang != "fr" || first.Number != 1 || first.Slug != "un" || first.DurationSeconds != 392 || first.Reference != "Réf 1" {
 		t.Errorf("fr-001 : champs = %+v", first)
 	}
 	if draft := got[2]; draft.PublishedAt != nil || draft.Series != nil {

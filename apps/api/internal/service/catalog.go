@@ -20,6 +20,7 @@ type SeriesRef struct {
 // EpisodeSummary est un épisode tel qu'il apparaît dans la liste du catalogue.
 type EpisodeSummary struct {
 	ID              string
+	Lang            string // sert à la clé du fichier audio ; absent du JSON, déjà dans l'id
 	Number          int
 	Slug            string
 	Title           string
@@ -51,14 +52,28 @@ type EpisodeStore interface {
 	Episode(ctx context.Context, id string) (Episode, error)
 }
 
-// Catalog sert le catalogue en lecture : uniquement les épisodes publiés.
-type Catalog struct {
-	store EpisodeStore
-	now   func() time.Time // time.Now en production, une heure fixe dans les tests
+// AudioTTL : durée de validité d'une URL audio (ADR-0003).
+const AudioTTL = time.Hour
+
+// SignAudioFunc renvoie une URL de lecture du fichier key, valable ttl à partir de now.
+// En production : la méthode PresignGet de r2.Signer.
+type SignAudioFunc func(key string, now time.Time, ttl time.Duration) string
+
+// AudioURL est une URL temporaire vers le fichier audio d'un épisode.
+type AudioURL struct {
+	URL       string
+	ExpiresAt time.Time
 }
 
-func NewCatalog(store EpisodeStore, now func() time.Time) *Catalog {
-	return &Catalog{store: store, now: now}
+// Catalog sert le catalogue en lecture : uniquement les épisodes publiés.
+type Catalog struct {
+	store     EpisodeStore
+	signAudio SignAudioFunc
+	now       func() time.Time // time.Now en production, une heure fixe dans les tests
+}
+
+func NewCatalog(store EpisodeStore, signAudio SignAudioFunc, now func() time.Time) *Catalog {
+	return &Catalog{store: store, signAudio: signAudio, now: now}
 }
 
 // Episodes renvoie les épisodes publiés d'une langue, du plus récent au plus ancien.
@@ -88,6 +103,28 @@ func (c *Catalog) Episode(ctx context.Context, id string) (Episode, error) {
 		return Episode{}, ErrNotFound
 	}
 	return episode, nil
+}
+
+// AudioURL renvoie une URL temporaire du fichier audio, ou ErrNotFound si l'épisode n'est pas publié.
+// C'est ici que se vérifiera l'abonnement, le jour où il existera.
+//
+// ponytail: passe par Episode (2 requêtes, sources comprises) ; une requête dédiée si la charge le demande.
+func (c *Catalog) AudioURL(ctx context.Context, id string) (AudioURL, error) {
+	episode, err := c.Episode(ctx, id)
+	if err != nil {
+		return AudioURL{}, err
+	}
+	// La signature ne garde que les secondes : l'URL expire à la seconde pleine, pas une fraction plus tard.
+	now := c.now().UTC().Truncate(time.Second)
+	return AudioURL{
+		URL:       c.signAudio(audioKey(episode.EpisodeSummary), now, AudioTTL),
+		ExpiresAt: now.Add(AudioTTL),
+	}, nil
+}
+
+// audioKey : emplacement du fichier dans le bucket, ex. fr/001-les-gens-de-la-caverne/audio-128.mp3 (ADR-0003).
+func audioKey(episode EpisodeSummary) string {
+	return fmt.Sprintf("%s/%03d-%s/audio-128.mp3", episode.Lang, episode.Number, episode.Slug)
 }
 
 // isPublished : un épisode devient visible à sa date de publication, jamais avant.

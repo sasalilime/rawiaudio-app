@@ -28,6 +28,10 @@ services:
       # Dans le réseau de Compose, la base s'appelle db et non localhost :
       # l'URL est donc construite ici, pas reprise du DATABASE_URL de .env.
       DATABASE_URL: postgres://rawi:${POSTGRES_PASSWORD:?à définir dans apps/api/.env}@db:5432/rawi?sslmode=disable
+      R2_ENDPOINT: ${R2_ENDPOINT:?à définir dans apps/api/.env}
+      R2_BUCKET: ${R2_BUCKET:?à définir dans apps/api/.env}
+      R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID:?à définir dans apps/api/.env}
+      R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY:?à définir dans apps/api/.env}
     ports:
       - "127.0.0.1:8080:8080"
     depends_on:

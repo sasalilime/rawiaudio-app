@@ -20,6 +20,8 @@ func NewRouter(ping func(context.Context) error, catalog catalogReader) http.Han
 	// Accès : public (le catalogue est gratuit tant que l'abonnement n'existe pas).
 	mux.Handle("GET /episodes", listEpisodes(catalog))
 	mux.Handle("GET /episodes/{id}", getEpisode(catalog))
+	// Accès : public pour l'instant ; l'abonnement se vérifiera dans service.Catalog.AudioURL.
+	mux.Handle("GET /episodes/{id}/audio", getEpisodeAudio(catalog))
 
 	return mux
 }

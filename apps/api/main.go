@@ -15,6 +15,7 @@ import (
 
 	"rawiaudio.com/api/internal/httpapi"
 	"rawiaudio.com/api/internal/migrate"
+	"rawiaudio.com/api/internal/r2"
 	"rawiaudio.com/api/internal/repository"
 	"rawiaudio.com/api/internal/service"
 	"rawiaudio.com/api/migrations"
@@ -53,8 +54,13 @@ func run() error {
 		return err
 	}
 
+	signer, err := r2.NewSigner(cfg.R2Endpoint, cfg.R2Bucket, cfg.R2AccessKeyID, cfg.R2SecretAccessKey)
+	if err != nil {
+		return fmt.Errorf("configuration R2: %w", err)
+	}
+
 	// Assemblage des couches : repository (SQL) → service (règles) → httpapi (HTTP).
-	catalog := service.NewCatalog(repository.NewCatalog(pool), time.Now)
+	catalog := service.NewCatalog(repository.NewCatalog(pool), signer.PresignGet, time.Now)
 
 	// Sans ces timeouts, un client lent garde une connexion ouverte indéfiniment.
 	srv := &http.Server{
