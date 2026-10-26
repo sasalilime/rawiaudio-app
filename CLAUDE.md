@@ -58,7 +58,7 @@ docs/adr/    décisions d'architecture
 ## Audio
 - Cloudflare R2, bucket privé, juridiction EU. Clés : `<langue>/<numéro>-<slug>/audio-128.mp3`.
 - L'API vérifie l'accès puis renvoie une URL signée courte. L'audio ne passe jamais par le VPS.
-- CORS du bucket : `app.rawiaudio.com` uniquement.
+- CORS du bucket : `app.rawiaudio.com`, et `http://localhost:5180` pour la PWA en dev (`ops/r2-cors.json`).
 
 ## Dépendances (règle de Salim)
 - Jamais de bibliothèque qui a elle-même plus de 3 dépendances. Comptage : mainteneurs tiers dans l'arbre, hors dépendances de test et modules `golang.org/x`.
