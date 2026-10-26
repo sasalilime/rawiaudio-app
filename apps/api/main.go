@@ -3,9 +3,7 @@ package main
 
 import (
 	"context"
-	"embed"
 	"fmt"
-	"io/fs"
 	"log/slog"
 	"net/http"
 	"os"
@@ -17,13 +15,8 @@ import (
 
 	"rawiaudio.com/api/internal/httpapi"
 	"rawiaudio.com/api/internal/migrate"
+	"rawiaudio.com/api/migrations"
 )
-
-// Les migrations sont compilées dans le binaire : l'image Docker n'a pas besoin du dossier.
-// go:embed ne peut pas remonter l'arborescence, d'où cette directive à la racine du module.
-//
-//go:embed migrations/*.sql
-var migrationFiles embed.FS
 
 func main() {
 	// Logger par défaut en JSON : sert aussi aux logs internes de net/http.
@@ -53,12 +46,8 @@ func run() error {
 	}
 	defer pool.Close()
 
-	// fs.Sub retire le préfixe migrations/ : le runner voit directement 0001_init.sql.
-	migrations, err := fs.Sub(migrationFiles, "migrations")
-	if err != nil {
-		return fmt.Errorf("dossier des migrations: %w", err)
-	}
-	if err := migrate.Run(ctx, pool, migrations); err != nil {
+	// Les migrations sont compilées dans le binaire : l'image Docker n'a pas besoin du dossier.
+	if err := migrate.Run(ctx, pool, migrations.FS); err != nil {
 		return err
 	}
 
