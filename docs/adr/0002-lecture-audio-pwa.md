@@ -49,5 +49,5 @@ Constats en cours de route :
 - iOS change chaque année en septembre. On repasse la version courte du protocole (`spikes/audio-pwa/README.md`) à chaque version majeure.
 
 ## Actions
-1. [ ] Le 29 octobre 2026 : rouvrir l'appli installée et vérifier que l'épisode est toujours « téléchargé ».
-2. [ ] Ensuite, supprimer le déploiement du prototype : `npx wrangler@4.142.0 delete --name rawi-spike-audio`.
+1. [ ] Le 29 octobre 2026 : **en mode Avion**, rouvrir l'appli installée et vérifier que l'épisode est toujours « téléchargé ». Le prototype n'est plus en ligne : avec le réseau, l'appli afficherait la page d'erreur de Cloudflare.
+2. [x] Déploiement du prototype supprimé le 26 octobre 2026.
