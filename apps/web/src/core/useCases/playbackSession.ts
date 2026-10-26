@@ -35,13 +35,18 @@ export interface PlaybackDeps {
   now: () => Date
   /** Titre, artiste et image de l'écran verrouillé : les textes viennent de l'interface. */
   describe: (episode: EpisodeSummary) => TrackMetadata
+  /** Adresse de la copie téléchargée, ou null : toujours préférée au réseau, même en ligne. */
+  localSource: (episodeId: string) => string | null
 }
 
 /** Intervalle minimal entre deux enregistrements de la position pendant la lecture. */
 const SAVE_INTERVAL_MS = 5_000
 
+/** Une copie locale n'expire jamais (plus grande date représentable). */
+const NEVER = new Date(8.64e15)
+
 /** La lecture d'un épisode à la fois, pour toute l'appli. */
-export function createPlaybackSession({ episodes, player, positions, now, describe }: PlaybackDeps): PlaybackSession {
+export function createPlaybackSession({ episodes, player, positions, now, describe, localSource }: PlaybackDeps): PlaybackSession {
   const urls = new Map<string, AudioUrl>() // dernière URL obtenue, par épisode
   const requests = new Map<string, Promise<AudioUrl>>() // demandes en cours, pour ne pas les doubler
   // Épisode chargé dans le lecteur ; null pendant qu'on attend une URL.
@@ -172,6 +177,7 @@ export function createPlaybackSession({ episodes, player, positions, now, descri
       return () => listeners.delete(listener)
     },
     prepare(episode) {
+      if (localSource(episode.id)) return
       // Échec ignoré exprès : play redemandera l'URL et affichera l'erreur s'il le faut.
       fetchUrl(episode.id).catch(() => undefined)
     },
@@ -184,7 +190,8 @@ export function createPlaybackSession({ episodes, player, positions, now, descri
       savePosition()
       if (current) player.pause()
       const startAt = resumePosition(positions.get(episode.id), episode.durationSeconds)
-      const url = usableUrl(episode.id)
+      const local = localSource(episode.id)
+      const url = local ? { url: local, expiresAt: NEVER } : usableUrl(episode.id)
       if (url) start(episode, url, startAt)
       else startAfterFetch(episode, startAt)
     },

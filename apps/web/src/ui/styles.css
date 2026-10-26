@@ -324,3 +324,41 @@ button {
   font-size: 0.85rem;
   text-align: center;
 }
+
+/* Bouton secondaire : contour ambre, pour ne pas concurrencer « Écouter » */
+button.secondary {
+  background: transparent;
+  color: var(--ambre);
+  border: 1px solid var(--ambre);
+}
+
+/* Téléchargement, sous le bouton principal */
+.download {
+  margin-block-start: 1rem;
+}
+
+.download p {
+  margin-block: 0 0.5rem;
+  color: var(--brume);
+  font-size: 0.95rem;
+}
+
+.download .download-done {
+  color: var(--papier);
+}
+
+.download progress {
+  width: 100%;
+  max-width: 16rem;
+  accent-color: var(--ambre);
+}
+
+.download-hint {
+  max-width: 34rem;
+}
+
+/* Marque « Téléchargé » dans la liste : une information, pas un bouton */
+.episode-downloaded {
+  color: var(--ambre);
+  font-size: 0.9rem;
+}

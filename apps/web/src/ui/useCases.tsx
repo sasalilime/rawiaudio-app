@@ -1,4 +1,5 @@
 import { createContext, useContext, type ReactNode } from 'react'
+import type { DownloadManager } from '../core/useCases/downloadManager.ts'
 import type { GetEpisode } from '../core/useCases/getEpisode.ts'
 import type { ListCatalog } from '../core/useCases/listCatalog.ts'
 import type { PlaybackSession } from '../core/useCases/playbackSession.ts'
@@ -8,6 +9,7 @@ export interface UseCases {
   listCatalog: ListCatalog
   getEpisode: GetEpisode
   playback: PlaybackSession
+  downloads: DownloadManager
 }
 
 const UseCasesContext = createContext<UseCases | null>(null)

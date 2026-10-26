@@ -21,7 +21,7 @@ const episode = (id: string): EpisodeSummary => ({
 // Laisse s'exécuter les promesses en attente (réponse de l'API simulée).
 const flush = () => new Promise((resolve) => setImmediate(resolve))
 
-function setup(saved: Record<string, number> = {}) {
+function setup(saved: Record<string, number> = {}, downloaded: string[] = []) {
   let clock = new Date('2026-10-26T12:00:00Z').getTime()
   const calls: string[] = []
   let urlCount = 0
@@ -78,6 +78,7 @@ function setup(saved: Record<string, number> = {}) {
     },
     now: () => new Date(clock),
     describe: (e) => ({ title: e.title, artist: 'Rawi Audio', artworkUrl: '/icon.png' }),
+    localSource: (id) => (downloaded.includes(id) ? `/offline/${id}` : null),
   })
   return {
     session,
@@ -240,4 +241,19 @@ test('les sauts restent dans les bornes de l’épisode', async () => {
   t.session.seekBy(-15)
   t.session.seekBy(1000)
   assert.deepEqual(t.calls.slice(-2), ['seek 0', 'seek 392'])
+})
+
+test("épisode téléchargé : lu depuis la copie locale, sans demander d'URL à l'API", async () => {
+  const t = setup({}, ['fr-001'])
+  t.session.prepare(episode('fr-001'))
+
+  t.session.play(episode('fr-001'))
+
+  assert.deepEqual(t.calls, ['load /offline/fr-001 @0 Titre fr-001', 'play'])
+  t.advance(24 * 60 * 60_000) // une copie locale n'expire jamais
+  t.emit('paused')
+  t.calls.length = 0
+  t.session.toggle()
+  assert.deepEqual(t.calls, ['play'])
+  assert.equal(t.urlCount(), 0)
 })

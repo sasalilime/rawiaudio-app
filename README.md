@@ -63,6 +63,11 @@ cd apps/web
 npm ci --ignore-scripts
 npm run dev    # http://localhost:5180
 ```
+Le service worker (hors ligne) ne tourne que dans l'appli construite, à la même adresse :
+```bash
+npm run build && npx vite preview    # http://localhost:5180
+```
+En revenant à `npm run dev`, l'appli retire elle-même ce service worker.
 
 ### Avant chaque commit
 ```bash

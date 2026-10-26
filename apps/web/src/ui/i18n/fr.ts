@@ -28,4 +28,13 @@ export const fr = {
   playerBlocked: 'Appuyez sur lecture pour démarrer.',
   playerError: 'Lecture impossible. Vérifiez la connexion, puis appuyez sur lecture.',
   playerEnded: 'Écouté jusqu’au bout.',
+  download: 'Télécharger',
+  downloading: (percent: number | null) => (percent === null ? 'Téléchargement…' : `Téléchargement… ${percent} %`),
+  downloaded: 'Téléchargé',
+  availableOffline: 'Disponible sans connexion.',
+  removeDownload: 'Supprimer le téléchargement',
+  downloadError: 'Le téléchargement n’a pas abouti. Vérifiez la connexion, puis réessayez.',
+  retryDownload: 'Réessayer le téléchargement',
+  installHint:
+    'Pour écouter sans connexion, ajoutez d’abord Rawi à l’écran d’accueil : touchez Partager, puis « Sur l’écran d’accueil ». Les téléchargements faits dans Safari n’apparaissent pas dans l’appli.',
 } as const

@@ -3,6 +3,7 @@ import { formatDuration } from '../format.ts'
 import { fr } from '../i18n/fr.ts'
 import { Link } from '../navigation.tsx'
 import { PageTitle } from '../components/PageTitle.tsx'
+import { DownloadButton } from '../components/DownloadButton.tsx'
 import { PlayButton } from '../components/PlayButton.tsx'
 import { useEpisode } from '../hooks/useEpisode.ts'
 
@@ -30,6 +31,7 @@ export function EpisodePage({ id }: { id: string }) {
           <p className="episode-meta">{formatDuration(state.data.durationSeconds)}</p>
           {state.data.series && <p className="episode-meta">{fr.series(state.data.series.title)}</p>}
           <PlayButton episode={state.data} />
+          <DownloadButton episode={state.data} />
 
           {state.data.summary.length > 0 && (
             <div className="summary">

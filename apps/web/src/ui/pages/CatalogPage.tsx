@@ -4,9 +4,11 @@ import { episodePath } from '../router.ts'
 import { Link } from '../navigation.tsx'
 import { PageTitle } from '../components/PageTitle.tsx'
 import { useCatalog } from '../hooks/useCatalog.ts'
+import { useDownloads } from '../hooks/useDownloads.ts'
 
 export function CatalogPage() {
   const [state, retry] = useCatalog('fr')
+  const [downloads] = useDownloads()
 
   return (
     <>
@@ -38,6 +40,9 @@ export function CatalogPage() {
                   <span className="episode-title">{episode.title}</span>
                   <span className="episode-meta">{episode.reference}</span>
                   <span className="episode-meta">{formatDuration(episode.durationSeconds)}</span>
+                  {downloads.get(episode.id)?.status === 'downloaded' && (
+                    <span className="episode-downloaded">{fr.downloaded}</span>
+                  )}
                 </span>
               </Link>
             </li>
