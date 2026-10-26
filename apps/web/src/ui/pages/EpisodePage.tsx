@@ -30,6 +30,9 @@ export function EpisodePage({ id }: { id: string }) {
           <p className="episode-meta">{state.data.reference}</p>
           <p className="episode-meta">{formatDuration(state.data.durationSeconds)}</p>
           {state.data.series && <p className="episode-meta">{fr.series(state.data.series.title)}</p>}
+          {state.data.themes.length > 0 && (
+            <p className="episode-meta">{fr.themes(state.data.themes.map((theme) => theme.title))}</p>
+          )}
           <PlayButton episode={state.data} />
           <DownloadButton episode={state.data} />
 

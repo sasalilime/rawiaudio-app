@@ -8,6 +8,12 @@ export interface SeriesRef {
   title: string
 }
 
+export interface ThemeRef {
+  id: string
+  title: string
+  position: number
+}
+
 export interface EpisodeSummary {
   /** Identifiant immuable : langue et numéro, ex. fr-001. Clé du téléchargement hors ligne. */
   id: string
@@ -20,6 +26,7 @@ export interface EpisodeSummary {
   /** Date ISO 8601 en UTC. */
   publishedAt: string
   series: SeriesRef | null
+  themes: ThemeRef[]
 }
 
 export interface Source {

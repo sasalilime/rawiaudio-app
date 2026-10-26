@@ -1,14 +1,10 @@
-import { formatDuration } from '../format.ts'
 import { fr } from '../i18n/fr.ts'
-import { episodePath } from '../router.ts'
-import { Link } from '../navigation.tsx'
+import { EpisodeRow } from '../components/EpisodeRow.tsx'
 import { PageTitle } from '../components/PageTitle.tsx'
 import { useCatalog } from '../hooks/useCatalog.ts'
-import { useDownloads } from '../hooks/useDownloads.ts'
 
 export function CatalogPage() {
   const [state, retry] = useCatalog('fr')
-  const [downloads] = useDownloads()
 
   return (
     <>
@@ -26,28 +22,34 @@ export function CatalogPage() {
           </button>
         </div>
       )}
-      {state.status === 'ok' && state.data.length === 0 && <p className="notice">{fr.emptyCatalog}</p>}
-      {state.status === 'ok' && state.data.length > 0 && (
-        <ol className="episodes">
-          {state.data.map((episode) => (
-            <li key={episode.id}>
-              <Link href={episodePath(episode.id)} className="episode-row">
-                <span className="episode-number" aria-hidden="true">
-                  {episode.number}
-                </span>
-                <span className="episode-text">
-                  <span className="visually-hidden">{fr.episodeNumber(episode.number)} : </span>
-                  <span className="episode-title">{episode.title}</span>
-                  <span className="episode-meta">{episode.reference}</span>
-                  <span className="episode-meta">{formatDuration(episode.durationSeconds)}</span>
-                  {downloads.get(episode.id)?.status === 'downloaded' && (
-                    <span className="episode-downloaded">{fr.downloaded}</span>
-                  )}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ol>
+      {state.status === 'ok' && !state.data.latest && <p className="notice">{fr.emptyCatalog}</p>}
+      {state.status === 'ok' && state.data.latest && (
+        <>
+          <section className="latest" aria-labelledby="latest-title">
+            <h2 id="latest-title" className="section-title">
+              {fr.latestEpisode}
+            </h2>
+            <EpisodeRow episode={state.data.latest} />
+          </section>
+
+          {state.data.sections.map((section) => {
+            const id = `theme-${section.theme?.id ?? 'autres'}`
+            return (
+              <section key={id} className="theme" aria-labelledby={id}>
+                <h2 id={id} className="section-title">
+                  {section.theme?.title ?? fr.otherStories}
+                </h2>
+                <ol className="episodes">
+                  {section.episodes.map((episode) => (
+                    <li key={episode.id}>
+                      <EpisodeRow episode={episode} />
+                    </li>
+                  ))}
+                </ol>
+              </section>
+            )
+          })}
+        </>
       )}
     </>
   )

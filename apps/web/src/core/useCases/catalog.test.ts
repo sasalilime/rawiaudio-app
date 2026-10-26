@@ -16,6 +16,7 @@ const summary: EpisodeSummary = {
   durationSeconds: 392,
   publishedAt: new Date('2026-10-16T00:00:00Z'),
   series: null,
+  themes: [],
 }
 const fiche: Episode = { ...summary, summary: ['p'], sources: [] }
 
@@ -47,10 +48,11 @@ function memoryCache(): CatalogCache & { lists: Map<string, EpisodeSummary[]>; e
   }
 }
 
-test('en ligne : la liste vient de l’API et est gardée pour plus tard', async () => {
+test('en ligne : la liste vient de l’API, est gardée pour plus tard, et revient rangée', async () => {
   const cache = memoryCache()
 
-  assert.deepEqual(await createListCatalog(repository(async () => [summary]), cache)('fr'), [summary])
+  const catalog = await createListCatalog(repository(async () => [summary]), cache)('fr')
+  assert.deepEqual(catalog, { latest: summary, sections: [{ theme: null, episodes: [summary] }] })
   assert.deepEqual(cache.lists.get('fr'), [summary])
 })
 
@@ -61,7 +63,7 @@ test('API injoignable : la dernière liste connue', async () => {
     throw new UnavailableError('hors ligne')
   })
 
-  assert.deepEqual(await createListCatalog(offline, cache)('fr'), [summary])
+  assert.equal((await createListCatalog(offline, cache)('fr')).latest, summary)
 })
 
 test('API injoignable et rien de gardé : l’erreur remonte', async () => {

@@ -7,6 +7,13 @@ export interface SeriesRef {
   title: string
 }
 
+export interface ThemeRef {
+  id: string
+  title: string
+  /** Ordre d'affichage des thèmes dans le catalogue. */
+  position: number
+}
+
 export interface EpisodeSummary {
   /** Identifiant immuable : langue et numéro, ex. fr-001. Clé du téléchargement hors ligne. */
   id: string
@@ -18,6 +25,8 @@ export interface EpisodeSummary {
   durationSeconds: number
   publishedAt: Date
   series: SeriesRef | null
+  /** Dans l'ordre d'affichage des thèmes ; vide si l'épisode n'en a pas. */
+  themes: ThemeRef[]
 }
 
 /** Un passage d'un livre de Shamela, cité sous l'épisode. */

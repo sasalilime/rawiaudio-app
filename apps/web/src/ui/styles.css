@@ -362,3 +362,22 @@ button.secondary {
   color: var(--ambre);
   font-size: 0.9rem;
 }
+
+/* Catalogue rangé : le dernier épisode, puis une section par thème */
+.section-title {
+  margin-block: 2.5rem 0.75rem;
+  font-family: var(--titre);
+  font-weight: 400;
+  font-size: 1.6rem;
+  line-height: 1.2;
+}
+
+.latest .section-title {
+  margin-block-start: 0;
+  color: var(--ambre);
+}
+
+/* Le dernier épisode, encadré d'un filet ambre plein : c'est lui qu'on écoute d'abord. */
+.latest .episode-row {
+  border-block: 1px solid var(--ambre);
+}

@@ -14,6 +14,7 @@ const episode: EpisodeSummary = {
   durationSeconds: 392,
   publishedAt: new Date('2026-10-16T00:00:00Z'),
   series: null,
+  themes: [],
 }
 
 const episodes: EpisodeRepository = {

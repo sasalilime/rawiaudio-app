@@ -41,6 +41,7 @@ export function createLocalCatalogCache(storage: Storage): CatalogCache {
 }
 
 // JSON ne connaît pas les dates : publishedAt revient en texte ISO.
+// Un catalogue gardé avant l'arrivée des thèmes n'a pas de champ themes : on le complète.
 function reviveDate<T extends EpisodeSummary>(episode: T): T {
-  return { ...episode, publishedAt: new Date(episode.publishedAt) }
+  return { ...episode, publishedAt: new Date(episode.publishedAt), themes: episode.themes ?? [] }
 }

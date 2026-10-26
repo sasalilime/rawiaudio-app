@@ -30,6 +30,7 @@ const fiche: Episode = {
   durationSeconds: 392,
   publishedAt: new Date('2026-10-16T00:00:00Z'),
   series: { id: 'fr-al-kahf', title: 'Al-Kahf' },
+  themes: [{ id: 'fr-histoires-du-coran', title: 'Histoires du Coran', position: 1 }],
   summary: ['p'],
   sources: [{ label: 'Saadi', url: 'https://shamela.ws/book/42' }],
 }
@@ -51,4 +52,12 @@ test('contenu illisible : comme si rien n’était gardé', () => {
   storage.setItem('rawi:catalog:fr', '{pas du json')
 
   assert.equal(createLocalCatalogCache(storage).getList('fr'), null)
+})
+
+test('un catalogue gardé avant les thèmes est complété par une liste vide', () => {
+  const storage = memoryStorage()
+  const { themes: _absent, ...old } = fiche
+  storage.setItem('rawi:catalog:fr', JSON.stringify([old]))
+
+  assert.deepEqual(createLocalCatalogCache(storage).getList('fr')?.[0]?.themes, [])
 })

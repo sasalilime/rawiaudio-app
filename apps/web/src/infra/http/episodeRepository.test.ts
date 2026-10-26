@@ -25,6 +25,7 @@ const episodeDto = {
   durationSeconds: 392,
   publishedAt: '2026-10-16T00:00:00Z',
   series: { id: 'fr-al-kahf', title: 'Al-Kahf' },
+  themes: [{ id: 'fr-prophetes', title: 'Les prophètes', position: 2 }],
 }
 
 test('traduit la liste en entités', async () => {
@@ -62,4 +63,10 @@ test("traduit l'URL audio, avec son expiration en Date", async () => {
 
   assert.equal(audio.url, 'https://r2.example/fr/001/audio-128.mp3?X-Amz-Signature=a')
   assert.equal(audio.expiresAt.toISOString(), '2026-10-26T13:00:00.000Z')
+})
+
+test('traduit les thèmes de chaque épisode', async () => {
+  const [episode] = await repositoryAnswering(json(200, { episodes: [episodeDto] })).list('fr')
+
+  assert.deepEqual(episode?.themes, [{ id: 'fr-prophetes', title: 'Les prophètes', position: 2 }])
 })
