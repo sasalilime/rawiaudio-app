@@ -1,0 +1,12 @@
+// Déploiement du prototype : npx wrangler@4.142.0 deploy (depuis ce dossier).
+{
+  "name": "rawi-spike-audio",
+  "main": "worker.js",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    // Le Worker ne passe devant les fichiers statiques que pour l'audio (plages d'octets).
+    "run_worker_first": ["/media/*"]
+  }
+}

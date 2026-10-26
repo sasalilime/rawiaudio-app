@@ -21,12 +21,12 @@ cp ~/Documents/rawi/gens_caverne_ep_1/miniature_final.jpg public/media/ep1.jpg
 
 ## Déployer
 Le service worker exige HTTPS : on publie le dossier `public/` sur Cloudflare, sous une adresse `workers.dev` à part.
+Les fichiers statiques des Workers ignorent l'en-tête `Range`, alors que Safari en a besoin pour lire l'audio. `worker.js` répond donc aux plages pour `/media/`, comme le fera R2 en production.
 ```bash
 cd ~/dev/rawiaudio-app/spikes/audio-pwa
-npx wrangler@4.142.0 login
-npx wrangler@4.142.0 deploy --assets ./public --name rawi-spike-audio --compatibility-date 2026-10-01
+npx wrangler@4.142.0 deploy
 ```
-L'adresse `https://rawi-spike-audio.<sous-domaine>.workers.dev` s'affiche à la fin.
+La configuration est dans `wrangler.jsonc`. L'adresse s'affiche à la fin : https://rawi-spike-audio.soft-wind-f3cc.workers.dev.
 Après une modification : changer `VERSION` dans `app.js`, puis relancer la commande `deploy`.
 À la fin des tests : `npx wrangler@4.142.0 delete --name rawi-spike-audio`.
 
