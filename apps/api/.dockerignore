@@ -1,0 +1,8 @@
+# Liste blanche : seul ce qui sert au build entre dans le contexte Docker.
+# Un nouveau fichier (secret compris) reste dehors tant qu'on ne l'ajoute pas ici.
+*
+!go.mod
+!go.sum
+!*.go
+!internal/
+!migrations/

@@ -22,5 +22,17 @@ services:
       timeout: 5s
       retries: 15
 
+  api:
+    build: .
+    environment:
+      # Dans le réseau de Compose, la base s'appelle db et non localhost :
+      # l'URL est donc construite ici, pas reprise du DATABASE_URL de .env.
+      DATABASE_URL: postgres://rawi:${POSTGRES_PASSWORD:?à définir dans apps/api/.env}@db:5432/rawi?sslmode=disable
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy # l'API migre au démarrage : la base doit répondre
+
 volumes:
   db-data:
