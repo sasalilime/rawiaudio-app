@@ -1,6 +1,6 @@
 # ADR-0006 : Rangement du catalogue par thème
 
-**Statut :** Accepté (noms des thèmes et rattachement des épisodes 1 à 4 à valider)
+**Statut :** Accepté (thèmes validés par Salim le 26 octobre 2026)
 **Date :** 26 octobre 2026
 **Décideur :** Salim
 
@@ -22,7 +22,7 @@
 
   Un épisode de plusieurs thèmes apparaît dans chacun.
 - **Séries** : gardées telles quelles, et affichées sur la fiche. Elles ne servent pas au rangement.
-- **Contenu** : les 10 thèmes du studio, avec des noms simplifiés pour les familles (`ops/episodes/0002-themes.sql`). Un nom se change par un `UPDATE`.
+- **Contenu** (`ops/episodes/0002-themes.sql`) : les thèmes du studio avec des noms simplifiés pour les familles, sans « Les anges », avec « Les dynasties ». Un nom se change par un `UPDATE`. Un thème sans épisode publié n'apparaît pas.
 
 ## Conséquences
 - Toutes les sections affichent tous leurs épisodes. Au-delà d'une dizaine d'épisodes par thème, il faudra une page par thème (`/themes/{slug}`) et des sections raccourcies.
