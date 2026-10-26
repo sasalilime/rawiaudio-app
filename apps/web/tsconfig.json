@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "es2023",
+    "lib": ["es2023", "dom", "dom.iterable"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "types": ["vite/client"],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noEmit": true,
+    // Imports avec l'extension .ts : Node les exige pour lancer les tests sans outil.
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    // Node retire les types sans compiler : pas d'enum, de namespace ni de propriété dans un constructeur.
+    "erasableSyntaxOnly": true,
+    "skipLibCheck": true
+  },
+  "include": ["src", "vite.config.ts"],
+  // ponytail: tests non vérifiés par tsc (il faudrait @types/node) ; Node les lance quand même.
+  "exclude": ["src/**/*.test.ts"]
+}

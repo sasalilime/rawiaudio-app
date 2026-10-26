@@ -1,0 +1,231 @@
+/* Polices auto-hébergées, reprises du site rawiaudio.com */
+@font-face {
+  font-family: "Lalezar";
+  src: url("/fonts/lalezar-arabic.woff2") format("woff2");
+  font-display: swap;
+  unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+200C-200E, U+FB50-FDFF, U+FE70-FEFC;
+}
+
+@font-face {
+  font-family: "Lalezar";
+  src: url("/fonts/lalezar-latin.woff2") format("woff2");
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308,
+    U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Literata";
+  src: url("/fonts/literata.woff2") format("woff2");
+  font-weight: 200 900;
+  font-display: swap;
+}
+
+/* Palette du site, définie une seule fois */
+:root {
+  --nuit: #1f2a44;
+  --ambre: #d4a24c;
+  --papier: #f5f2ec;
+  --brume: #a9aebc;
+  --trait: rgba(212, 162, 76, 0.28);
+  --serif: "Literata", Georgia, "Times New Roman", serif;
+  --titre: "Lalezar", Georgia, serif;
+  --colonne: 38rem;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: dark;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100svh;
+  background: var(--nuit);
+  color: var(--papier);
+  font-family: var(--serif);
+  font-size: 1.125rem;
+  line-height: 1.7;
+  /* Encoche et barre d'accueil de l'iPhone en mode installé */
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px)
+    env(safe-area-inset-left, 0px);
+}
+
+#root {
+  max-width: var(--colonne);
+  margin-inline: auto;
+  padding-inline: 1.25rem;
+  padding-block-end: 3rem;
+}
+
+a {
+  color: var(--papier);
+  text-decoration-color: var(--trait);
+  text-underline-offset: 0.2em;
+}
+
+:focus-visible {
+  outline: 3px solid var(--ambre);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* Le titre reçoit le focus à chaque page pour les lecteurs d'écran : pas de contour pour ce focus-là. */
+h1:focus {
+  outline: none;
+}
+
+button {
+  font: inherit;
+  font-weight: 600;
+  color: var(--nuit);
+  background: var(--ambre);
+  border: 0;
+  border-radius: 999px;
+  padding: 0.55rem 1.4rem;
+  cursor: pointer;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* En-tête */
+.masthead {
+  padding-block: 1.25rem 0.5rem;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--titre);
+  font-size: 1.6rem;
+  line-height: 1;
+  color: var(--ambre);
+  text-decoration: none;
+}
+
+.tagline {
+  margin-block: 0 2rem;
+  color: var(--brume);
+  font-size: 1rem;
+}
+
+.notice {
+  color: var(--brume);
+}
+
+/* Liste des épisodes : une ligne entière par épisode, séparée par un filet */
+.episodes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-block-start: 1px solid var(--trait);
+}
+
+.episodes li {
+  border-block-end: 1px solid var(--trait);
+}
+
+.episode-row {
+  display: grid;
+  grid-template-columns: 3.5rem 1fr;
+  align-items: start;
+  gap: 1rem;
+  padding-block: 1.25rem;
+  text-decoration: none;
+}
+
+.episode-number {
+  font-family: var(--titre);
+  font-size: 3.25rem;
+  line-height: 0.9;
+  color: var(--ambre);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+.episode-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.episode-title {
+  font-family: var(--titre);
+  font-size: 1.5rem;
+  line-height: 1.2;
+}
+
+.episode-row:hover .episode-title {
+  text-decoration: underline;
+  text-decoration-color: var(--ambre);
+}
+
+.episode-meta {
+  margin: 0;
+  color: var(--brume);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+/* Fiche d'un épisode */
+.back {
+  display: inline-block;
+  margin-block: 0.5rem 1.5rem;
+  color: var(--brume);
+  font-size: 0.95rem;
+}
+
+.episode-number--large {
+  margin: 0;
+  font-size: 5rem;
+  text-align: start;
+}
+
+.episode-heading {
+  margin-block: 0.25rem 0.75rem;
+  font-family: var(--titre);
+  font-weight: 400;
+  font-size: clamp(2rem, 8vw, 2.75rem);
+  line-height: 1.1;
+}
+
+.summary {
+  margin-block-start: 2rem;
+  max-width: 65ch;
+}
+
+.sources {
+  margin-block-start: 2.5rem;
+  padding-block-start: 1.5rem;
+  border-block-start: 1px solid var(--trait);
+}
+
+.sources h2 {
+  margin: 0;
+  font-family: var(--titre);
+  font-weight: 400;
+  font-size: 1.5rem;
+}
+
+.sources ul {
+  padding-inline-start: 1.25rem;
+}
+
+.sources li + li {
+  margin-block-start: 0.5rem;
+}

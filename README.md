@@ -54,6 +54,24 @@ Les images sont épinglées par digest d'index (`tag@sha256:…`) : elles ne re�
 2. Remplacer le tag et le digest dans `apps/api/Dockerfile` (images `golang` et `distroless`) ou `apps/api/compose.yaml` (image `postgres`).
 3. Changement de version de Go : changer aussi la ligne `go` de `apps/api/go.mod`, les deux doivent concorder.
 
+## PWA (`apps/web`)
+
+### Démarrer en local
+L'API doit tourner sur le port 8080 (voir plus haut) : en dev, Vite lui relaie les appels à `/api`.
+```bash
+cd apps/web
+npm ci --ignore-scripts
+npm run dev    # http://localhost:5180
+```
+
+### Avant chaque commit
+```bash
+cd apps/web
+npm run typecheck
+npm test
+npm run build
+```
+
 ## Repos liés
 
 - `rawiaudio-site` : vitrine rawiaudio.com.
