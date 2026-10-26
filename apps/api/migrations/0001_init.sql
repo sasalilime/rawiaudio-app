@@ -1,0 +1,1 @@
+-- Migration initiale, vide : elle pose le mécanisme. Le schéma arrive avec le catalogue.

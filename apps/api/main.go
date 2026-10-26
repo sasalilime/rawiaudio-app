@@ -3,7 +3,9 @@ package main
 
 import (
 	"context"
+	"embed"
 	"fmt"
+	"io/fs"
 	"log/slog"
 	"net/http"
 	"os"
@@ -14,7 +16,14 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"rawiaudio.com/api/internal/httpapi"
+	"rawiaudio.com/api/internal/migrate"
 )
+
+// Les migrations sont compilées dans le binaire : l'image Docker n'a pas besoin du dossier.
+// go:embed ne peut pas remonter l'arborescence, d'où cette directive à la racine du module.
+//
+//go:embed migrations/*.sql
+var migrationFiles embed.FS
 
 func main() {
 	// Logger par défaut en JSON : sert aussi aux logs internes de net/http.
@@ -43,6 +52,15 @@ func run() error {
 		return fmt.Errorf("création du pool postgres: %w", err)
 	}
 	defer pool.Close()
+
+	// fs.Sub retire le préfixe migrations/ : le runner voit directement 0001_init.sql.
+	migrations, err := fs.Sub(migrationFiles, "migrations")
+	if err != nil {
+		return fmt.Errorf("dossier des migrations: %w", err)
+	}
+	if err := migrate.Run(ctx, pool, migrations); err != nil {
+		return err
+	}
 
 	// Sans ces timeouts, un client lent garde une connexion ouverte indéfiniment.
 	srv := &http.Server{
