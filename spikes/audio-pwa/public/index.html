@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Rawi — test audio</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/icon-180.png">
+  <meta name="theme-color" content="#1F2A44">
+  <style>
+    :root { color-scheme: dark; --nuit: #1F2A44; --ambre: #D4A24C; --papier: #F5F2EC; --brume: #A9AEBC; }
+    body { margin: 0; background: var(--nuit); color: var(--papier); font: 16px/1.4 system-ui, sans-serif; }
+    main { max-width: 32rem; margin: 0 auto; padding: max(1rem, env(safe-area-inset-top)) 1rem 2rem; }
+    h1 { font-size: 1.3rem; }
+    h2 { font-size: 1.1rem; }
+    img { width: 100%; height: auto; border-radius: .5rem; }
+    audio { width: 100%; margin: .5rem 0; }
+    .buttons { display: flex; flex-wrap: wrap; gap: .5rem; }
+    button { font: inherit; padding: .6rem .9rem; border: 0; border-radius: .5rem; background: var(--ambre); color: var(--nuit); }
+    button:focus-visible { outline: 3px solid var(--papier); outline-offset: 2px; }
+    .info { color: var(--brume); font-size: .9rem; }
+    #log { padding-left: 1.2rem; font: .8rem/1.4 ui-monospace, monospace; color: var(--brume); }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Rawi — test audio iPhone</h1>
+    <p id="mode" class="info"></p>
+
+    <section aria-labelledby="episode-title">
+      <img src="/media/ep1.jpg" alt="" width="1280" height="720">
+      <h2 id="episode-title">Épisode 1 : Les Gens de la Caverne</h2>
+      <audio id="player" controls preload="none"></audio>
+      <div class="buttons">
+        <button type="button" id="stream">Lire en streaming</button>
+        <button type="button" id="download">Télécharger</button>
+        <button type="button" id="offline">Lire hors ligne</button>
+        <button type="button" id="remove">Supprimer le téléchargement</button>
+      </div>
+      <p id="status" class="info" role="status"></p>
+    </section>
+
+    <section aria-labelledby="log-title">
+      <h2 id="log-title">Journal (le plus récent en haut)</h2>
+      <div class="buttons">
+        <button type="button" id="copy">Copier le journal</button>
+        <button type="button" id="clear">Effacer le journal</button>
+      </div>
+      <ol id="log" reversed></ol>
+    </section>
+  </main>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
