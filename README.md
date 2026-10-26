@@ -77,6 +77,13 @@ npm test
 npm run build
 ```
 
+## Production (`ops/`)
+
+Décisions : [ADR-0005](docs/adr/0005-mise-en-ligne.md). Procédures : [`ops/runbooks/`](ops/runbooks/).
+- `ops/compose.yaml` : la stack de production (API et Postgres), derrière Caddy sur le VPS.
+- `ops/backup.sh` et `ops/systemd/` : sauvegarde de la base chaque nuit.
+- `ops/episodes/` : SQL de saisie des épisodes, en attendant l'import depuis le studio.
+
 ## Repos liés
 
 - `rawiaudio-site` : vitrine rawiaudio.com.
