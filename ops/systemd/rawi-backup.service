@@ -1,0 +1,9 @@
+# Sauvegarde de la base de Rawi, lancée par rawi-backup.timer. Installation : ops/runbooks/sauvegardes.md.
+[Unit]
+Description=Sauvegarde de la base de Rawi
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/srv/rawiaudio-app/ops/backup.sh

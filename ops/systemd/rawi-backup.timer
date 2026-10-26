@@ -1,0 +1,11 @@
+# Chaque nuit vers 3 h 15 ; Persistent rattrape une sauvegarde manquée (VPS éteint à l'heure prévue).
+[Unit]
+Description=Sauvegarde quotidienne de la base de Rawi
+
+[Timer]
+OnCalendar=*-*-* 03:15:00
+RandomizedDelaySec=10m
+Persistent=true
+
+[Install]
+WantedBy=timers.target
