@@ -2,7 +2,6 @@ package httpapi
 
 import (
 	"context"
-	"encoding/json"
 	"log/slog"
 	"net/http"
 	"time"
@@ -26,10 +25,6 @@ func health(ping func(context.Context) error) http.HandlerFunc {
 			code, body = http.StatusServiceUnavailable, healthResponse{Status: "unavailable"}
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(code)
-		if err := json.NewEncoder(w).Encode(body); err != nil {
-			slog.WarnContext(ctx, "écriture de la réponse /health", "err", err)
-		}
+		writeJSON(w, r, code, body)
 	}
 }
