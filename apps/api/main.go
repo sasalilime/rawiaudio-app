@@ -15,6 +15,8 @@ import (
 
 	"rawiaudio.com/api/internal/httpapi"
 	"rawiaudio.com/api/internal/migrate"
+	"rawiaudio.com/api/internal/repository"
+	"rawiaudio.com/api/internal/service"
 	"rawiaudio.com/api/migrations"
 )
 
@@ -51,10 +53,13 @@ func run() error {
 		return err
 	}
 
+	// Assemblage des couches : repository (SQL) → service (règles) → httpapi (HTTP).
+	catalog := service.NewCatalog(repository.NewCatalog(pool), time.Now)
+
 	// Sans ces timeouts, un client lent garde une connexion ouverte indéfiniment.
 	srv := &http.Server{
 		Addr:              ":" + cfg.Port,
-		Handler:           httpapi.NewRouter(pool.Ping),
+		Handler:           httpapi.NewRouter(pool.Ping, catalog),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       10 * time.Second,
 		WriteTimeout:      15 * time.Second,
