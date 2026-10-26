@@ -23,7 +23,16 @@ SQL
 - Une apostrophe dans un texte SQL s'écrit deux fois : `'L''homme'`.
 - La base refuse un identifiant qui ne correspond pas à la langue et au numéro, un slug avec majuscules ou espaces, et une langue inconnue.
 
-## 3. Sources et résumé, recopiés de la fiche validée du studio
+## 3. Le ou les thèmes
+Un épisode peut entrer dans plusieurs thèmes ; sans thème, il s'affiche dans « Autres histoires ».
+Liste des thèmes : `docker compose exec -T db psql -U rawi -d rawi -c "SELECT id, title FROM themes ORDER BY position"`.
+```bash
+docker compose exec -T db psql -U rawi -d rawi -v ON_ERROR_STOP=1 <<'SQL'
+INSERT INTO episode_themes (episode_id, theme_id, lang) VALUES ('fr-005', 'fr-prophetes', 'fr');
+SQL
+```
+
+## 4. Sources et résumé, recopiés de la fiche validée du studio
 Jamais rédigés ailleurs. Les sources sont des liens Shamela de la matrice `studio/docs/sources.md` : la base refuse tout autre lien.
 ```bash
 docker compose exec -T db psql -U rawi -d rawi -v ON_ERROR_STOP=1 <<'SQL'
@@ -35,13 +44,13 @@ COMMIT;
 SQL
 ```
 
-## 4. Publication
+## 5. Publication
 Date et heure en UTC ; une date future programme la sortie.
 ```bash
 docker compose exec -T db psql -U rawi -d rawi -c "UPDATE episodes SET published_at = '2026-11-06 06:00:00+00' WHERE id = 'fr-005'"
 ```
 
-## 5. Vérification
+## 6. Vérification
 ```bash
 curl -s "https://api.rawiaudio.com/episodes/fr-005" | head -c 300; echo
 curl -s "https://api.rawiaudio.com/episodes/fr-005/audio" | head -c 120; echo
@@ -50,6 +59,6 @@ curl -s "https://api.rawiaudio.com/episodes/fr-005/audio" | head -c 120; echo
 - La deuxième commande doit renvoyer une URL : ouvrir l'épisode dans l'appli et l'écouter quelques secondes.
 
 ## Épisodes 1 à 4
-`ops/episodes/0001-episodes-1-a-4.sql` les crée non publiés (étape 2), d'après le site.
+`ops/episodes/0001-episodes-1-a-4.sql` les crée non publiés (étape 2), d'après le site, puis `0002-themes.sql` crée les 10 thèmes et les y range (étape 3).
 - Audio sur R2 au 26/10/2026 : épisodes 1, 2 et 3. Épisode 4 : choisir entre `younous_ep_4.mp3` (128 kbit/s, mono) et `younous_ep_4_ambiance.mp3` (192 kbit/s, stéréo, à réencoder).
-- Restent les étapes 3 et 4 pour chacun, avec les fiches du studio.
+- Restent les étapes 4 et 5 pour chacun, avec les fiches du studio.
