@@ -1,0 +1,13 @@
+// Publication de la PWA sur Cloudflare Workers (fichiers statiques seulement). Depuis apps/web :
+//   npm run build:prod && npx wrangler@4.142.0 deploy
+{
+  "name": "rawiaudio-app",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./dist",
+    // Toutes les adresses de l'appli (/episodes/fr-001…) renvoient index.html : le routeur de la PWA s'en charge.
+    "not_found_handling": "single-page-application"
+  },
+  // Crée l'enregistrement DNS de app.rawiaudio.com dans la zone Cloudflare de rawiaudio.com au premier déploiement.
+  "routes": [{ "pattern": "app.rawiaudio.com", "custom_domain": true }]
+}
