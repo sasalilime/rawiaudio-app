@@ -13,17 +13,37 @@ Dépôt dans R2, sous la clé de l'ADR-0003 (`<langue>/<numéro sur 3 chiffres>-
 npx wrangler@4.142.0 r2 object put rawi-audio/fr/005-<slug>/audio-128.mp3 --file <fichier>.mp3 --content-type audio/mpeg --jurisdiction eu --remote
 ```
 
-## 2. L'épisode en base, non publié (sur le VPS, depuis `ops/`)
+## 2. L'illustration (depuis le poste de dev, ADR-0009)
+Source : l'illustration **sans texte** du studio (pas la miniature YouTube). Facultative : sans elle, l'appli garde son affichage habituel.
+
+Conversion en WebP 960 × 540, recadré au centre, qualité 70, sans métadonnées :
+```bash
+ffmpeg -i <illustration>.png -vf "scale=960:540:force_original_aspect_ratio=increase,crop=960:540" -c:v libwebp -quality 70 -compression_level 6 -map_metadata -1 image-16x9.webp
+```
+Contrôle (attendu : `960,540`, puis `OK`) :
+```bash
+ffprobe -v error -show_entries stream=width,height -of csv=p=0 image-16x9.webp
+[ "$(stat -c %s image-16x9.webp)" -le 61440 ] && echo OK || echo "TROP LOURD : refaire la conversion avec -quality 60"
+```
+Dépôt dans le bucket public `rawi-images` (créé une fois, voir en bas), avec un cache d'un an :
+```bash
+npx wrangler@4.142.0 r2 object put rawi-images/fr/005-<slug>/image-16x9.webp --file image-16x9.webp --content-type image/webp --cache-control "public, max-age=31536000, immutable" --jurisdiction eu --remote
+```
+- Une image déposée ne se remplace jamais sous la même clé : téléphones et cache de Cloudflare la gardent un an. Pour la changer, la déposer sous `image-16x9-2.webp`, puis mettre la base à jour : `UPDATE episodes SET image_key = 'fr/005-<slug>/image-16x9-2.webp' WHERE id = 'fr-005'`.
+
+## 3. L'épisode en base, non publié (sur le VPS, depuis `ops/`)
+`image_key` : la clé de l'étape 2, ou `NULL` sans illustration.
 ```bash
 docker compose exec -T db psql -U rawi -d rawi -v ON_ERROR_STOP=1 <<'SQL'
-INSERT INTO episodes (id, lang, number, slug, title, reference, duration_seconds, series_id)
-VALUES ('fr-005', 'fr', 5, '<slug>', '<Titre>', 'Sourate <…>, versets <…>', <durée en secondes>, NULL);
+INSERT INTO episodes (id, lang, number, slug, title, reference, duration_seconds, series_id, image_key)
+VALUES ('fr-005', 'fr', 5, '<slug>', '<Titre>', 'Sourate <…>, versets <…>', <durée en secondes>, NULL, 'fr/005-<slug>/image-16x9.webp');
 SQL
 ```
 - Une apostrophe dans un texte SQL s'écrit deux fois : `'L''homme'`.
 - La base refuse un identifiant qui ne correspond pas à la langue et au numéro, un slug avec majuscules ou espaces, et une langue inconnue.
+- Elle refuse aussi une clé d'illustration hors du dossier de l'épisode (`fr/005-<slug>/`), ou qui n'est pas un `.webp`.
 
-## 3. Le ou les thèmes
+## 4. Le ou les thèmes
 Un épisode peut entrer dans plusieurs thèmes ; sans thème, il s'affiche dans « Autres histoires ».
 Liste des thèmes : `docker compose exec -T db psql -U rawi -d rawi -c "SELECT id, title FROM themes ORDER BY position"`.
 ```bash
@@ -32,7 +52,7 @@ INSERT INTO episode_themes (episode_id, theme_id, lang) VALUES ('fr-005', 'fr-pr
 SQL
 ```
 
-## 4. Sources et résumé, recopiés de la fiche validée du studio
+## 5. Sources et résumé, recopiés de la fiche validée du studio
 Jamais rédigés ailleurs. Les sources sont des liens Shamela de la matrice `studio/docs/sources.md` : la base refuse tout autre lien.
 ```bash
 docker compose exec -T db psql -U rawi -d rawi -v ON_ERROR_STOP=1 <<'SQL'
@@ -44,21 +64,48 @@ COMMIT;
 SQL
 ```
 
-## 5. Publication
+## 6. Publication
 Date et heure en UTC ; une date future programme la sortie.
 ```bash
 docker compose exec -T db psql -U rawi -d rawi -c "UPDATE episodes SET published_at = '2026-11-06 06:00:00+00' WHERE id = 'fr-005'"
 ```
 
-## 6. Vérification
+## 7. Vérification
 ```bash
 curl -s "https://api.rawiaudio.com/episodes/fr-005" | head -c 300; echo
 curl -s "https://api.rawiaudio.com/episodes/fr-005/audio" | head -c 120; echo
+curl -sI "https://media.rawiaudio.com/fr/005-<slug>/image-16x9.webp" | grep -iE '^(HTTP|content-type|cache-control|cf-cache-status)'
 ```
-- La fiche doit contenir les sources.
+- La fiche doit contenir les sources, et `imageUrl` si l'épisode a une illustration.
 - La deuxième commande doit renvoyer une URL : ouvrir l'épisode dans l'appli et l'écouter quelques secondes.
+- La troisième doit donner `200`, `image/webp` et le `cache-control` d'un an. Relancée, elle doit montrer `cf-cache-status: HIT` : l'image vient du cache de Cloudflare, pas de R2.
 
 ## Épisodes 1 à 4
-`ops/episodes/0001-episodes-1-a-4.sql` les crée non publiés (étape 2), d'après le site, puis `0002-themes.sql` crée les 10 thèmes et les y range (étape 3).
+`ops/episodes/0001-episodes-1-a-4.sql` les crée non publiés (étape 3), d'après le site, puis `0002-themes.sql` crée les 10 thèmes et les y range (étape 4).
 - Audio sur R2 au 26/10/2026 : épisodes 1, 2 et 3. Épisode 4 : choisir entre `younous_ep_4.mp3` (128 kbit/s, mono) et `younous_ep_4_ambiance.mp3` (192 kbit/s, stéréo, à réencoder).
-- Restent les étapes 4 et 5 pour chacun, avec les fiches du studio.
+- Restent les étapes 5 et 6 pour chacun, avec les fiches du studio.
+- Illustrations : à demander au studio, sans texte (étape 2), puis `UPDATE episodes SET image_key = …` pour chacun.
+
+## Une seule fois : le bucket des illustrations (ADR-0009)
+Depuis la racine du repo, sur le poste de dev.
+
+1. Le bucket, en juridiction EU comme celui de l'audio :
+   ```bash
+   npx wrangler@4.142.0 r2 bucket create rawi-images --jurisdiction eu
+   ```
+2. Le CORS, le même que pour l'audio (`ops/r2-cors.json`) : la PWA télécharge l'image avec l'audio pour le hors ligne.
+   ```bash
+   npx wrangler@4.142.0 r2 bucket cors set rawi-images --file ops/r2-cors.json --jurisdiction eu
+   ```
+3. Le domaine `media.rawiaudio.com`. L'identifiant de zone est dans le tableau de bord Cloudflare : site `rawiaudio.com`, page « Overview », encadré « API », « Zone ID ». Cloudflare crée lui-même l'enregistrement DNS.
+   ```bash
+   npx wrangler@4.142.0 r2 bucket domain add rawi-images --domain media.rawiaudio.com --zone-id <zone-id> --min-tls 1.2 --jurisdiction eu
+   ```
+4. L'adresse `r2.dev` doit rester désactivée (réservée au développement, débit limité). Attendu : désactivée.
+   ```bash
+   npx wrangler@4.142.0 r2 bucket dev-url get rawi-images --jurisdiction eu
+   ```
+5. Vérification, quelques minutes plus tard : le domaine répond, sans lister le contenu du bucket. Attendu : `HTTP/2 404`.
+   ```bash
+   curl -sI https://media.rawiaudio.com/ | head -1
+   ```

@@ -77,6 +77,8 @@ docs/adr/    décisions d'architecture
 - Cloudflare R2, bucket privé, juridiction EU. Clés : `<langue>/<numéro>-<slug>/audio-128.mp3`.
 - L'API vérifie l'accès puis renvoie une URL signée courte. L'audio ne passe jamais par le VPS.
 - CORS du bucket : `app.rawiaudio.com`, et `http://localhost:5180` pour la PWA en dev (`ops/r2-cors.json`).
+- Illustrations (ADR-0009) : bucket **public** à part, `rawi-images`, servi par `media.rawiaudio.com`. Clé `<langue>/<numéro>-<slug>/image-16x9.webp`, WebP 960 × 540 de 60 Ko au plus, cache d'un an : une image publiée ne change jamais, on la remplace sous une nouvelle clé. Même CORS que l'audio.
+- Publication d'un épisode, audio et illustration : `ops/runbooks/publier-un-episode.md`.
 
 ## Dépendances (règle de Salim)
 - Jamais de bibliothèque qui a elle-même plus de 3 dépendances. Comptage : mainteneurs tiers dans l'arbre, hors dépendances de test et modules `golang.org/x`.
