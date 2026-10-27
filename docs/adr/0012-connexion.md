@@ -1,6 +1,6 @@
 # ADR-0012 : Connexion par e-mail (lien et code)
 
-**Statut :** Proposé, à valider par Salim (questions en fin de document)
+**Statut :** Accepté le 27 octobre 2026 (« oui pour tout »), sauf les questions 5 et 6 (migrations), encore ouvertes
 **Date :** 27 octobre 2026
 **Décideur :** Salim
 
@@ -84,12 +84,12 @@ sessions       (token_hash PRIMARY KEY, account_id → accounts ON DELETE CASCAD
 - **Claude**, si Salim est d'accord : le contrat OpenAPI, l'adaptateur d'envoi et Mailpit, le texte de l'e-mail, les écrans de la PWA et de l'app (e-mail, code avec `autocomplete="one-time-code"`, « Mon compte » avec déconnexion et suppression).
 
 ## Questions pour Salim
-1. **Resend** pour les e-mails de connexion, avec l'adresse d'envoi `connexion@rawiaudio.com` ? Le plan gratuit (100 par jour) suffit pour les essais ; au lancement, le plan Pro (20 $ par mois) évite qu'un pic de connexions bloque la journée.
-2. **Durée de session** : 180 jours prolongés à l'usage, ou plus court ?
-3. **`expo-secure-store`** pour garder le jeton sur le téléphone (module officiel d'Expo, hors du comptage des dépendances, mais à valider comme tout ajout) ?
-4. **Le partage** : `DELETE /account` et la déconnexion suffisent pour la tranche 6, ou faut-il déjà « se déconnecter de tous les appareils » ? Une limite d'appareils par compte se discutera avec l'abonnement (tranche 7).
+1. ~~Resend~~ : oui, avec `connexion@rawiaudio.com` (27 octobre 2026).
+2. ~~Durée de session~~ : 180 jours, prolongés à l'usage.
+3. ~~`expo-secure-store`~~ : oui.
+4. ~~Le partage~~ : la déconnexion et `DELETE /account` suffisent pour la tranche 6 ; « se déconnecter de tous les appareils » et la limite d'appareils se discutent avec l'abonnement.
 5. **Historique** (ADR-0007) : synchronisé dans cette tranche, ou juste après ? Sans lui, la tranche 6 ne change rien de visible tant que l'abonnement n'existe pas.
-6. **Le partage du travail** ci-dessus te convient-il, en particulier : qui écrit les migrations ?
+6. ~~Le partage du travail~~ : accepté. Reste à dire **qui écrit les migrations**.
 
 ## Conséquences
 - Les routes du catalogue restent publiques ; `routes.go` gagne un wrapper par niveau d'accès (`public`, `compte`), comme prévu par son commentaire.

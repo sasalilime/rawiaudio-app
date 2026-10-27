@@ -1,6 +1,6 @@
 # ADR-0013 : Publication sur l'App Store et Google Play
 
-**Statut :** Proposé, à valider par Salim (questions en fin de document)
+**Statut :** Accepté le 27 octobre 2026 (« oui pour tout »), sauf l'adresse affichée (question 2), encore ouverte
 **Date :** 27 octobre 2026
 **Décideur :** Salim
 **Prévu par :** ADR-0008 (« la publication sur les stores fera l'objet d'un ADR à part »)
@@ -18,7 +18,7 @@
 
 ## Proposition
 - **Android d'abord.** Un APK de test s'installe sans compte payant ; Salim l'essaie sur son téléphone après le 30 octobre.
-- **Comptes** (voir la question 1) : individuel chez Apple. Chez Google, l'organisation si une structure avec un D-U-N-S existe d'ici là ; sinon un compte personnel, et lancer le test fermé tôt.
+- **Comptes** : individuel chez Apple, personnel chez Google (Salim est entrepreneur individuel), et lancer le test fermé tôt.
 - **Les 12 testeurs** : des familles de la liste d'attente du site (inscrits de `rawiaudio.com`), plus l'entourage. On les invite par le lien de test de Google ; ils servent aussi de premiers retours sur l'app. Ne jamais acheter de testeurs : Google ferme les comptes pour ça.
 - **iPhone** : TestFlight pour les essais (les testeurs externes passent par une relecture rapide d'Apple), puis la soumission.
 - **Builds avec EAS**, plan gratuit : pas de Mac nécessaire pour iOS. Un fichier `eas.json` avec trois profils :
@@ -31,17 +31,17 @@
   - données collectées (étiquettes de confidentialité Apple, section « Sécurité des données » de Google) : aucune avant la connexion ; ensuite l'e-mail du compte, lié à la personne, ni partagé ni utilisé pour la publicité, et supprimable depuis l'app ;
   - pas de publicité, pas d'achat dans l'app.
 - **Dans l'app, avant la première soumission** :
-  - un lien vers la politique de confidentialité, facile à trouver. Apple l'exige dans l'app **et** dans la fiche (règle 5.1.1(i)). Il faut donc d'abord la page sur le site (repo `rawiaudio-site`), puis un écran « À propos » (version, confidentialité, contact, site) ;
-  - l'écran de démarrage aux couleurs de Rawi (`expo-splash-screen`, module officiel, à installer) ;
+  - un lien vers la politique de confidentialité, facile à trouver. Apple l'exige dans l'app **et** dans la fiche (règle 5.1.1(i)). Fait le 27 octobre 2026 : page `rawiaudio.com/confidentialite` (repo `rawiaudio-site`, à mettre en ligne) et écran « À propos » de l'app ;
+  - l'écran de démarrage aux couleurs de Rawi : fait le 27 octobre 2026 (`expo-splash-screen`) ;
   - avec la tranche 6 : la suppression du compte depuis l'app (ADR-0012).
 - **Fiches** : nom « Rawi Audio », sous-titre, description, captures d'écran (iPhone 6,9 pouces et Android), icône déjà prête. URL d'assistance et de confidentialité sur `rawiaudio.com`.
 
 ## Questions pour Salim
-1. **Structure juridique** : vendre l'abonnement demande une activité déclarée (micro-entreprise ou société). Chez Apple, une micro-entreprise s'inscrit comme individu (ton nom comme vendeur). Chez Google, une société avec D-U-N-S évite les 14 jours de test. Laquelle vises-tu, et quand ? À voir avec le comptable, avec la question de la TVA (ADR-0010).
-2. **Adresse affichée** (Apple, UE) : domiciliation d'entreprise, ou ton adresse personnelle ? La même question se pose pour les mentions légales du site.
-3. **Sortir avant l'abonnement** : publier l'app gratuite dès qu'elle est prête, sans connexion, puis ajouter le cadenas avec la tranche 7 ?
-4. **Expo** : créer un compte Expo (gratuit) et utiliser EAS Build, plutôt que des builds locaux ?
-5. **Testeurs** : écrire aux inscrits de la liste d'attente pour le test fermé ?
+1. ~~Structure juridique~~ : Salim est déjà entrepreneur individuel (EI), nom commercial Rawi Audio (mentions légales du site). Donc compte **individuel** chez Apple (son nom comme vendeur), et compte **personnel** chez Google, avec les 14 jours de test fermé. Une société avec D-U-N-S en dispenserait, si elle se crée un jour.
+2. **Adresse affichée** (Apple, UE) : domiciliation d'entreprise, ou ton adresse personnelle ? Les mentions légales du site ne donnent que la ville. Il faudra une adresse complète pour Apple.
+3. ~~Sortir avant l'abonnement~~ : oui, l'app gratuite sort dès qu'elle est prête ; le cadenas arrive avec la tranche 7.
+4. ~~Expo~~ : oui, un compte Expo et EAS Build (plan gratuit).
+5. ~~Testeurs~~ : oui, on écrit aux inscrits de la liste d'attente pour le test fermé.
 
 ## Conséquences
 - Ajout de `apps/mobile/eas.json`. `eas-cli` est lancé par `npx` avec une version fixe, comme `wrangler` : rien dans les dépendances.
