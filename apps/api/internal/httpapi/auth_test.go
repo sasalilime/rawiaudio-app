@@ -73,7 +73,7 @@ func call(auth authService, method, target, body string, header map[string]strin
 		req.Header.Set(k, v)
 	}
 	rec := httptest.NewRecorder()
-	NewRouter(func(context.Context) error { return nil }, nil, auth).ServeHTTP(rec, req)
+	NewRouter(func(context.Context) error { return nil }, nil, auth, nil).ServeHTTP(rec, req)
 	return rec
 }
 
@@ -268,7 +268,7 @@ func TestSessionCookieIsRefreshedAndCleared(t *testing.T) {
 
 func TestLoginIsLimitedPerIP(t *testing.T) {
 	// Un seul routeur : les limites vivent dans ses limiteurs.
-	router := NewRouter(func(context.Context) error { return nil }, nil, &fakeAuth{})
+	router := NewRouter(func(context.Context) error { return nil }, nil, &fakeAuth{}, nil)
 	send := func(remoteAddr, forwardedFor string) int {
 		req := httptest.NewRequest(http.MethodPost, "/auth/login", strings.NewReader(`{"email":"a@b.fr"}`))
 		req.RemoteAddr = remoteAddr
@@ -311,7 +311,7 @@ func TestCrossOriginRefusesOtherSites(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	handler := protect(NewRouter(func(context.Context) error { return nil }, nil, &fakeAuth{}))
+	handler := protect(NewRouter(func(context.Context) error { return nil }, nil, &fakeAuth{}, nil))
 	send := func(header map[string]string) *httptest.ResponseRecorder {
 		req := httptest.NewRequest(http.MethodPost, "https://api.rawiaudio.com/auth/login", strings.NewReader(`{"email":"a@b.fr"}`))
 		for k, v := range header {
@@ -337,5 +337,66 @@ func TestCrossOriginRefusesOtherSites(t *testing.T) {
 	}
 	if _, err := CrossOrigin("pas une origine"); err == nil {
 		t.Error("origine invalide acceptée")
+	}
+}
+
+// fakeHistory note le compte et les épisodes reçus, et renvoie ce qu'on lui donne.
+type fakeHistory struct {
+	accountID int64
+	got       []string
+	answer    []string
+}
+
+func (f *fakeHistory) Sync(_ context.Context, accountID int64, episodeIDs []string) ([]string, error) {
+	f.accountID, f.got = accountID, episodeIDs
+	return f.answer, nil
+}
+
+func TestSyncHistory(t *testing.T) {
+	send := func(history *fakeHistory, body string, header map[string]string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(http.MethodPost, "/account/history", strings.NewReader(body))
+		for k, v := range header {
+			req.Header.Set(k, v)
+		}
+		rec := httptest.NewRecorder()
+		NewRouter(func(context.Context) error { return nil }, nil, &fakeAuth{}, history).ServeHTTP(rec, req)
+		return rec
+	}
+	bearer := func(token string) map[string]string { return map[string]string{"Authorization": "Bearer " + token} }
+
+	history := &fakeHistory{}
+	if rec := send(history, `{"episodeIds":["fr-001"]}`, nil); rec.Code != http.StatusUnauthorized || history.got != nil {
+		t.Errorf("sans session : %d, service appelé avec %v", rec.Code, history.got)
+	}
+
+	// Le compte vient de la session : B synchronise toujours l'historique de B.
+	history = &fakeHistory{answer: []string{"fr-001", "fr-002"}}
+	rec := send(history, `{"episodeIds":["fr-002"]}`, bearer(tokenB))
+	var body historyResponse
+	if err := json.NewDecoder(rec.Body).Decode(&body); err != nil {
+		t.Fatal(err)
+	}
+	if rec.Code != http.StatusOK || history.accountID != accountB.ID || len(body.EpisodeIDs) != 2 {
+		t.Errorf("code %d, compte %d, réponse %+v", rec.Code, history.accountID, body)
+	}
+
+	// Historique vide : [] et jamais null, que le client lit comme une liste.
+	rec = send(&fakeHistory{answer: []string{}}, `{"episodeIds":[]}`, bearer(tokenA))
+	if got := strings.TrimSpace(rec.Body.String()); got != `{"episodeIds":[]}` {
+		t.Errorf("historique vide : %s", got)
+	}
+
+	tooMany := `{"episodeIds":["` + strings.TrimSuffix(strings.Repeat(`fr-001","`, maxHeardEpisodes+1), `","`) + `"]}`
+	for name, body := range map[string]string{
+		"liste absente":       `{}`,
+		"identifiant inventé": `{"episodeIds":["../../etc"]}`,
+		"autre forme":         `{"episodeIds":["fr-1"]}`,
+		"trop d'épisodes":     tooMany,
+		"champ inconnu":       `{"episodeIds":[],"accountId":2}`,
+	} {
+		history := &fakeHistory{}
+		if rec := send(history, body, bearer(tokenA)); rec.Code != http.StatusBadRequest || history.got != nil {
+			t.Errorf("%s : code %d", name, rec.Code)
+		}
 	}
 }

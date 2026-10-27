@@ -57,7 +57,7 @@ const episodeOneJSON = `{"id": "fr-001", "number": 1, "slug": "un", "title": "Un
 // serve passe par NewRouter pour tester aussi le routage et la lecture de {id}.
 func serve(catalog catalogReader, target string) *httptest.ResponseRecorder {
 	rec := httptest.NewRecorder()
-	NewRouter(func(context.Context) error { return nil }, catalog, nil).
+	NewRouter(func(context.Context) error { return nil }, catalog, nil, nil).
 		ServeHTTP(rec, httptest.NewRequest(http.MethodGet, target, nil))
 	return rec
 }

@@ -72,13 +72,14 @@ func run() error {
 	// Assemblage des couches : repository (SQL) → service (règles) → httpapi (HTTP).
 	catalog := service.NewCatalog(repository.NewCatalog(pool), signer.PresignGet, cfg.ImagesBaseURL, time.Now)
 	auth := service.NewAuth(repository.NewAuth(pool), sender, []byte(cfg.AuthSecret), cfg.AppURL, cfg.MailDailyCap, time.Now)
+	history := service.NewHistory(repository.NewHistory(pool), time.Now)
 	go cleanupEveryHour(ctx, auth)
 
 	// Sans ces timeouts, un client lent garde une connexion ouverte indéfiniment.
 	// CORS en premier : une réponse 403 du CSRF garde ses en-têtes CORS, la PWA peut la lire.
 	srv := &http.Server{
 		Addr:              cfg.Host + ":" + cfg.Port,
-		Handler:           httpapi.CORS(cfg.CORSAllowedOrigin)(crossOrigin(httpapi.NewRouter(pool.Ping, catalog, auth))),
+		Handler:           httpapi.CORS(cfg.CORSAllowedOrigin)(crossOrigin(httpapi.NewRouter(pool.Ping, catalog, auth, history))),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       10 * time.Second,
 		WriteTimeout:      15 * time.Second,

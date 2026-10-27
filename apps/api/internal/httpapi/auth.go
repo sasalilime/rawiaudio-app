@@ -95,9 +95,9 @@ type sessionResponse struct {
 	Token   string          `json:"token,omitempty"` // seulement pour l'app mobile
 }
 
-// decodeJSON lit un corps JSON d'au plus maxBodyBytes : aucun champ inconnu, rien après l'objet.
-func decodeJSON(w http.ResponseWriter, r *http.Request, dst any) error {
-	r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
+// decodeJSON lit un corps JSON d'au plus limit octets : aucun champ inconnu, rien après l'objet.
+func decodeJSON(w http.ResponseWriter, r *http.Request, dst any, limit int64) error {
+	r.Body = http.MaxBytesReader(w, r.Body, limit)
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(dst); err != nil {
@@ -112,7 +112,7 @@ func decodeJSON(w http.ResponseWriter, r *http.Request, dst any) error {
 func requestLogin(auth authService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req loginRequest
-		if err := decodeJSON(w, r, &req); err != nil || req.Validate() != nil {
+		if err := decodeJSON(w, r, &req, maxBodyBytes); err != nil || req.Validate() != nil {
 			writeError(w, r, http.StatusBadRequest, "invalid_request")
 			return
 		}
@@ -137,7 +137,7 @@ func requestLogin(auth authService) http.HandlerFunc {
 func verifyCode(auth authService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req codeRequest
-		if err := decodeJSON(w, r, &req); err != nil || req.Validate() != nil {
+		if err := decodeJSON(w, r, &req, maxBodyBytes); err != nil || req.Validate() != nil {
 			writeError(w, r, http.StatusBadRequest, "invalid_request")
 			return
 		}
@@ -149,7 +149,7 @@ func verifyCode(auth authService) http.HandlerFunc {
 func verifyLink(auth authService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req linkRequest
-		if err := decodeJSON(w, r, &req); err != nil || req.Validate() != nil {
+		if err := decodeJSON(w, r, &req, maxBodyBytes); err != nil || req.Validate() != nil {
 			writeError(w, r, http.StatusBadRequest, "invalid_request")
 			return
 		}

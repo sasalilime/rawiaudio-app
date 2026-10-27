@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
+
 	"rawiaudio.com/api/internal/migrate"
 	"rawiaudio.com/api/internal/pgtest"
 	"rawiaudio.com/api/internal/repository"
@@ -70,6 +72,7 @@ func (c *clock) Advance(d time.Duration) {
 }
 
 type fixture struct {
+	pool  *pgxpool.Pool
 	auth  *service.Auth
 	mail  *sentMail
 	clock *clock
@@ -81,7 +84,7 @@ func newFixture(t *testing.T, dailyMailCap int) fixture {
 	if err := migrate.Run(t.Context(), pool, migrations.FS); err != nil {
 		t.Fatalf("migrations: %v", err)
 	}
-	f := fixture{mail: &sentMail{}, clock: &clock{now: time.Date(2026, 10, 27, 12, 0, 0, 0, time.UTC)}}
+	f := fixture{pool: pool, mail: &sentMail{}, clock: &clock{now: time.Date(2026, 10, 27, 12, 0, 0, 0, time.UTC)}}
 	f.auth = service.NewAuth(repository.NewAuth(pool), f.mail, []byte("secret-de-test-de-32-caracteres!"),
 		"https://app.rawiaudio.com", dailyMailCap, f.clock.Now)
 	return f

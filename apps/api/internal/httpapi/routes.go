@@ -18,7 +18,7 @@ const (
 //   - compte : requireAccount, sinon 401.
 //
 // Une route absente d'ici n'existe pas : le ServeMux répond 404.
-func NewRouter(ping func(context.Context) error, catalog catalogReader, auth authService) http.Handler {
+func NewRouter(ping func(context.Context) error, catalog catalogReader, auth authService, history historyService) http.Handler {
 	mux := http.NewServeMux()
 	account := func(next http.Handler) http.Handler { return requireAccount(auth, next) }
 	loginLimit := newIPLimiter(loginRequestsPerIP, time.Hour)
@@ -42,6 +42,7 @@ func NewRouter(ping func(context.Context) error, catalog catalogReader, auth aut
 	mux.Handle("POST /auth/logout", account(logout(auth)))
 	mux.Handle("GET /account", account(getAccount()))
 	mux.Handle("DELETE /account", account(deleteAccount(auth)))
+	mux.Handle("POST /account/history", account(syncHistory(history)))
 
 	return mux
 }

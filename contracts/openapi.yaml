@@ -3,7 +3,7 @@
 openapi: 3.1.0
 info:
   title: API Rawi Audio
-  version: 0.2.0
+  version: 0.3.0
 servers:
   - url: https://api.rawiaudio.com
   - url: http://localhost:8080
@@ -245,6 +245,38 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "500":
           $ref: "#/components/responses/Internal"
+  /account/history:
+    post:
+      operationId: syncHistory
+      summary: Synchronise l'historique d'écoute du compte (ADR-0007)
+      description: >
+        L'appareil envoie tous les épisodes qu'il a entendus et reçoit tout l'historique du compte : il garde l'union.
+        Un épisode entendu le reste, rien ne se retire. Un identifiant inconnu, ou d'un épisode pas encore publié, est ignoré.
+        Une liste vide lit l'historique sans rien ajouter.
+      security:
+        - sessionCookie: []
+        - bearerToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HeardEpisodes"
+      responses:
+        "200":
+          description: Tout l'historique du compte, trié.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HeardEpisodes"
+        "400":
+          $ref: "#/components/responses/InvalidRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/Internal"
 components:
   securitySchemes:
     sessionCookie:
@@ -395,6 +427,18 @@ components:
       properties:
         email:
           $ref: "#/components/schemas/Email"
+    HeardEpisodes:
+      type: object
+      additionalProperties: false
+      required: [episodeIds]
+      properties:
+        episodeIds:
+          type: array
+          maxItems: 2000
+          items:
+            type: string
+            pattern: "^(fr|ar|en)-[0-9]{3}$"
+            example: fr-001
     SessionOpened:
       type: object
       additionalProperties: false
