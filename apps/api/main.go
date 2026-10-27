@@ -60,7 +60,7 @@ func run() error {
 	}
 
 	// Assemblage des couches : repository (SQL) → service (règles) → httpapi (HTTP).
-	catalog := service.NewCatalog(repository.NewCatalog(pool), signer.PresignGet, time.Now)
+	catalog := service.NewCatalog(repository.NewCatalog(pool), signer.PresignGet, cfg.ImagesBaseURL, time.Now)
 
 	// Sans ces timeouts, un client lent garde une connexion ouverte indéfiniment.
 	srv := &http.Server{

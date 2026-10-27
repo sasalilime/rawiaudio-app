@@ -40,8 +40,9 @@ type episodeSummaryResponse struct {
 	Reference       string             `json:"reference"`
 	DurationSeconds int                `json:"durationSeconds"`
 	PublishedAt     *time.Time         `json:"publishedAt"`
-	Series          *seriesRefResponse `json:"series"` // null pour un épisode hors série
-	Themes          []themeRefResponse `json:"themes"` // [] et jamais null
+	Series          *seriesRefResponse `json:"series"`   // null pour un épisode hors série
+	Themes          []themeRefResponse `json:"themes"`   // [] et jamais null
+	ImageURL        *string            `json:"imageUrl"` // null sans illustration (ADR-0009)
 }
 
 type sourceResponse struct {
@@ -144,6 +145,7 @@ func toSummaryResponse(episode service.EpisodeSummary) episodeSummaryResponse {
 		Reference:       episode.Reference,
 		DurationSeconds: episode.DurationSeconds,
 		Themes:          make([]themeRefResponse, 0, len(episode.Themes)),
+		ImageURL:        episode.ImageURL,
 	}
 	for _, theme := range episode.Themes {
 		response.Themes = append(response.Themes, themeRefResponse{ID: theme.ID, Title: theme.Title, Position: theme.Position})

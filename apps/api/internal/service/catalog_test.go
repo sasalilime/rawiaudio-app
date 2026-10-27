@@ -38,7 +38,7 @@ func TestEpisodesKeepsOnlyPublished(t *testing.T) {
 		summary("fr-002", nil),                    // brouillon
 		summary("fr-001", at(now.AddDate(0, 0, -10))),
 	}}
-	catalog := NewCatalog(store, nil, func() time.Time { return now })
+	catalog := NewCatalog(store, nil, "", func() time.Time { return now })
 
 	got, err := catalog.Episodes(t.Context(), "fr")
 	if err != nil {
@@ -54,7 +54,7 @@ func TestEpisodesKeepsOnlyPublished(t *testing.T) {
 }
 
 func TestEpisodesNeverNil(t *testing.T) {
-	catalog := NewCatalog(fakeStore{}, nil, func() time.Time { return now })
+	catalog := NewCatalog(fakeStore{}, nil, "", func() time.Time { return now })
 
 	got, err := catalog.Episodes(t.Context(), "fr")
 	if err != nil {
@@ -78,7 +78,7 @@ func TestEpisodeHidesUnpublished(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			store := fakeStore{episode: Episode{EpisodeSummary: summary("fr-001", tt.publishedAt)}}
-			catalog := NewCatalog(store, nil, func() time.Time { return now })
+			catalog := NewCatalog(store, nil, "", func() time.Time { return now })
 
 			got, err := catalog.Episode(t.Context(), "fr-001")
 			if !errors.Is(err, tt.wantErr) {
@@ -93,7 +93,7 @@ func TestEpisodeHidesUnpublished(t *testing.T) {
 
 func TestStoreErrorsAreWrapped(t *testing.T) {
 	storeErr := errors.New("base injoignable")
-	catalog := NewCatalog(fakeStore{err: storeErr}, nil, func() time.Time { return now })
+	catalog := NewCatalog(fakeStore{err: storeErr}, nil, "", func() time.Time { return now })
 
 	if _, err := catalog.Episodes(t.Context(), "fr"); !errors.Is(err, storeErr) {
 		t.Errorf("Episodes : erreur = %v, attendu l'erreur du store", err)
@@ -102,7 +102,7 @@ func TestStoreErrorsAreWrapped(t *testing.T) {
 		t.Errorf("Episode : erreur = %v, attendu l'erreur du store", err)
 	}
 	// ErrNotFound renvoyé par le store doit rester reconnaissable après l'enveloppe du service.
-	notFound := NewCatalog(fakeStore{err: ErrNotFound}, nil, func() time.Time { return now })
+	notFound := NewCatalog(fakeStore{err: ErrNotFound}, nil, "", func() time.Time { return now })
 	if _, err := notFound.Episode(t.Context(), "fr-999"); !errors.Is(err, ErrNotFound) {
 		t.Errorf("erreur = %v, attendu ErrNotFound", err)
 	}
@@ -122,7 +122,7 @@ func TestAudioURL(t *testing.T) {
 	// Heure avec des fractions de seconde, à Paris : l'expiration doit tomber à la seconde pleine, en UTC.
 	clock := time.Date(2026, 10, 26, 13, 0, 0, 999_000_000, time.FixedZone("Paris", 60*60))
 	episode := EpisodeSummary{ID: "fr-001", Lang: "fr", Number: 1, Slug: "les-gens-de-la-caverne", PublishedAt: at(now.AddDate(0, 0, -1))}
-	catalog := NewCatalog(fakeStore{episode: Episode{EpisodeSummary: episode}}, sign, func() time.Time { return clock })
+	catalog := NewCatalog(fakeStore{episode: Episode{EpisodeSummary: episode}}, sign, "", func() time.Time { return clock })
 
 	got, err := catalog.AudioURL(t.Context(), "fr-001")
 	if err != nil {
@@ -142,12 +142,49 @@ func TestAudioURLNotPublished(t *testing.T) {
 	signed := false
 	sign := func(string, time.Time, time.Duration) string { signed = true; return "" }
 	draft := EpisodeSummary{ID: "fr-002", Lang: "fr", Number: 2, Slug: "deux", PublishedAt: at(now.Add(time.Hour))}
-	catalog := NewCatalog(fakeStore{episode: Episode{EpisodeSummary: draft}}, sign, func() time.Time { return now })
+	catalog := NewCatalog(fakeStore{episode: Episode{EpisodeSummary: draft}}, sign, "", func() time.Time { return now })
 
 	if _, err := catalog.AudioURL(t.Context(), "fr-002"); !errors.Is(err, ErrNotFound) {
 		t.Errorf("erreur = %v, attendu ErrNotFound", err)
 	}
 	if signed {
 		t.Error("une URL a été signée pour un épisode programmé")
+	}
+}
+
+// text affiche un *string lisiblement dans les messages d'erreur : sa valeur, ou nil.
+func text(p *string) string {
+	if p == nil {
+		return "nil"
+	}
+	return *p
+}
+
+func TestImageURL(t *testing.T) {
+	key := "fr/001-un/image-16x9.webp"
+	withImage := summary("fr-001", at(now.AddDate(0, 0, -1)))
+	withImage.ImageKey = &key
+	withoutImage := summary("fr-002", at(now.AddDate(0, 0, -1)))
+	store := fakeStore{episodes: []EpisodeSummary{withImage, withoutImage}, episode: Episode{EpisodeSummary: withImage}}
+	catalog := NewCatalog(store, nil, "https://media.example", func() time.Time { return now })
+	want := "https://media.example/fr/001-un/image-16x9.webp"
+
+	list, err := catalog.Episodes(t.Context(), "fr")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := list[0].ImageURL; got == nil || *got != want {
+		t.Errorf("liste, avec illustration : ImageURL = %s, attendu %s", text(got), want)
+	}
+	if got := list[1].ImageURL; got != nil {
+		t.Errorf("liste, sans illustration : ImageURL = %s, attendu nil (null en JSON)", text(got))
+	}
+
+	episode, err := catalog.Episode(t.Context(), "fr-001")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := episode.ImageURL; got == nil || *got != want {
+		t.Errorf("fiche : ImageURL = %s, attendu %s", text(got), want)
 	}
 }

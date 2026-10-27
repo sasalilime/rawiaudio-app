@@ -28,6 +28,8 @@ export interface EpisodeSummary {
   publishedAt: string
   series: SeriesRef | null
   themes: ThemeRef[]
+  /** Illustration (ADR-0009), adresse publique qui ne change jamais ; null si l'épisode n'en a pas. */
+  imageUrl: string | null
 }
 
 export interface Source {

@@ -39,16 +39,20 @@ func (f fakeCatalog) AudioURL(context.Context, string) (service.AudioURL, error)
 var paris = time.FixedZone("Paris", 2*60*60)
 var publishedAt = time.Date(2026, 10, 16, 2, 0, 0, 0, paris)
 
+var imageURL = "https://media.rawiaudio.com/fr/001-un/image-16x9.webp"
+
 var episodeOne = service.EpisodeSummary{
 	ID: "fr-001", Number: 1, Slug: "un", Title: "Un", Reference: "Réf 1", DurationSeconds: 392,
 	PublishedAt: &publishedAt,
 	Series:      &service.SeriesRef{ID: "fr-al-kahf", Title: "Al-Kahf", Part: 1},
 	Themes:      []service.ThemeRef{{ID: "fr-histoires-du-coran", Title: "Histoires du Coran", Position: 1}},
+	ImageURL:    &imageURL,
 }
 
 const episodeOneJSON = `{"id": "fr-001", "number": 1, "slug": "un", "title": "Un", "reference": "Réf 1",
 	"durationSeconds": 392, "publishedAt": "2026-10-16T00:00:00Z", "series": {"id": "fr-al-kahf", "title": "Al-Kahf", "part": 1},
-	"themes": [{"id": "fr-histoires-du-coran", "title": "Histoires du Coran", "position": 1}]}`
+	"themes": [{"id": "fr-histoires-du-coran", "title": "Histoires du Coran", "position": 1}],
+	"imageUrl": "https://media.rawiaudio.com/fr/001-un/image-16x9.webp"}`
 
 // serve passe par NewRouter pour tester aussi le routage et la lecture de {id}.
 func serve(catalog catalogReader, target string) *httptest.ResponseRecorder {
@@ -131,7 +135,8 @@ func TestListEpisodes(t *testing.T) {
 func TestGetEpisode(t *testing.T) {
 	withoutSeries := episodeOne
 	withoutSeries.Series = nil
-	withoutSeries.Themes = nil // aucun thème : [] attendu, jamais null
+	withoutSeries.Themes = nil   // aucun thème : [] attendu, jamais null
+	withoutSeries.ImageURL = nil // sans illustration : null attendu, jamais un champ absent
 
 	tests := []struct {
 		name     string
@@ -151,13 +156,14 @@ func TestGetEpisode(t *testing.T) {
 				"sources": [{"label": "تفسير السعدي", "url": "https://shamela.ws/book/42/474"}]}`,
 		},
 		{
-			name:     "hors série, sans résumé ni source : null et listes vides",
+			name:     "hors série, sans illustration, résumé ni source : null et listes vides",
 			catalog:  fakeCatalog{episode: service.Episode{EpisodeSummary: withoutSeries}},
 			wantCode: http.StatusOK,
-			wantBody: strings.Replace(strings.Replace(strings.TrimSuffix(episodeOneJSON, "}"),
-				`{"id": "fr-al-kahf", "title": "Al-Kahf", "part": 1}`, "null", 1),
-				`[{"id": "fr-histoires-du-coran", "title": "Histoires du Coran", "position": 1}]`, "[]", 1) +
-				`, "summary": [], "sources": []}`,
+			wantBody: strings.NewReplacer(
+				`{"id": "fr-al-kahf", "title": "Al-Kahf", "part": 1}`, "null",
+				`[{"id": "fr-histoires-du-coran", "title": "Histoires du Coran", "position": 1}]`, "[]",
+				`"`+imageURL+`"`, "null",
+			).Replace(strings.TrimSuffix(episodeOneJSON, "}")) + `, "summary": [], "sources": []}`,
 		},
 		{
 			name:     "inconnu ou pas encore publié",

@@ -23,7 +23,7 @@ func NewCatalog(pool *pgxpool.Pool) *Catalog {
 }
 
 // Colonnes communes à la liste et à la fiche, dans l'ordre attendu par scanSummary.
-const summaryColumns = `e.id, e.lang, e.number, e.slug, e.title, e.reference, e.duration_seconds, e.published_at, s.id, s.title, e.series_part`
+const summaryColumns = `e.id, e.lang, e.number, e.slug, e.title, e.reference, e.duration_seconds, e.published_at, s.id, s.title, e.series_part, e.image_key`
 
 func (c *Catalog) Episodes(ctx context.Context, lang string) ([]service.EpisodeSummary, error) {
 	rows, err := c.pool.Query(ctx, `
@@ -129,7 +129,7 @@ func scanSummary(row pgx.Row, extra ...any) (service.EpisodeSummary, error) {
 	var seriesPart *int
 	dest := append([]any{
 		&episode.ID, &episode.Lang, &episode.Number, &episode.Slug, &episode.Title, &episode.Reference,
-		&episode.DurationSeconds, &episode.PublishedAt, &seriesID, &seriesTitle, &seriesPart,
+		&episode.DurationSeconds, &episode.PublishedAt, &seriesID, &seriesTitle, &seriesPart, &episode.ImageKey,
 	}, extra...)
 	if err := row.Scan(dest...); err != nil {
 		return service.EpisodeSummary{}, err

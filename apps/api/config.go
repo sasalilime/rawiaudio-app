@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"slices"
 	"strings"
@@ -17,6 +18,8 @@ type config struct {
 	R2SecretAccessKey string // ne jamais le logger
 	// Facultatif : l'origine de la PWA autorisée en CORS (https://app.rawiaudio.com en prod, vide en dev).
 	CORSAllowedOrigin string
+	// Adresse publique des illustrations (ADR-0009), sans / final. https://media.rawiaudio.com par défaut.
+	ImagesBaseURL string
 }
 
 func loadConfig() (config, error) {
@@ -28,9 +31,13 @@ func loadConfig() (config, error) {
 		R2AccessKeyID:     os.Getenv("R2_ACCESS_KEY_ID"),
 		R2SecretAccessKey: os.Getenv("R2_SECRET_ACCESS_KEY"),
 		CORSAllowedOrigin: os.Getenv("CORS_ALLOWED_ORIGIN"),
+		ImagesBaseURL:     strings.TrimSuffix(os.Getenv("IMAGES_BASE_URL"), "/"),
 	}
 	if cfg.Port == "" {
 		cfg.Port = "8080"
+	}
+	if cfg.ImagesBaseURL == "" {
+		cfg.ImagesBaseURL = "https://media.rawiaudio.com"
 	}
 
 	// Toutes les variables manquantes d'un coup : on corrige le .env en une fois.
@@ -49,6 +56,12 @@ func loadConfig() (config, error) {
 	if len(missing) > 0 {
 		slices.Sort(missing) // l'ordre de parcours d'une map change d'un lancement à l'autre
 		return config{}, fmt.Errorf("variables d'environnement manquantes : %s", strings.Join(missing, ", "))
+	}
+
+	// Chaque adresse d'image est cette base + "/" + la clé : il faut une adresse absolue, sans paramètres.
+	base, err := url.Parse(cfg.ImagesBaseURL)
+	if err != nil || (base.Scheme != "https" && base.Scheme != "http") || base.Host == "" || base.RawQuery != "" || base.Fragment != "" {
+		return config{}, fmt.Errorf("IMAGES_BASE_URL invalide : %q, attendu par exemple https://media.rawiaudio.com", cfg.ImagesBaseURL)
 	}
 	return cfg, nil
 }

@@ -37,6 +37,9 @@ type EpisodeSummary struct {
 	PublishedAt     *time.Time // nil : pas de date de publication (brouillon)
 	Series          *SeriesRef // nil : épisode hors série
 	Themes          []ThemeRef // dans l'ordre d'affichage des thèmes ; vide si l'épisode n'en a pas
+	// Illustration (ADR-0009). Pointeurs : nil quand l'épisode n'en a pas, comme string | null en TypeScript.
+	ImageKey *string // clé dans le bucket public, lue en base
+	ImageURL *string // adresse publique, calculée par Catalog à partir d'ImageKey
 }
 
 // Source est un passage d'un livre de Shamela, cité sous l'épisode.
@@ -76,13 +79,14 @@ type AudioURL struct {
 
 // Catalog sert le catalogue en lecture : uniquement les épisodes publiés.
 type Catalog struct {
-	store     EpisodeStore
-	signAudio SignAudioFunc
-	now       func() time.Time // time.Now en production, une heure fixe dans les tests
+	store         EpisodeStore
+	signAudio     SignAudioFunc
+	imagesBaseURL string           // ex. https://media.rawiaudio.com, sans / final
+	now           func() time.Time // time.Now en production, une heure fixe dans les tests
 }
 
-func NewCatalog(store EpisodeStore, signAudio SignAudioFunc, now func() time.Time) *Catalog {
-	return &Catalog{store: store, signAudio: signAudio, now: now}
+func NewCatalog(store EpisodeStore, signAudio SignAudioFunc, imagesBaseURL string, now func() time.Time) *Catalog {
+	return &Catalog{store: store, signAudio: signAudio, imagesBaseURL: imagesBaseURL, now: now}
 }
 
 // Episodes renvoie les épisodes publiés d'une langue, du plus récent au plus ancien.
@@ -95,7 +99,7 @@ func (c *Catalog) Episodes(ctx context.Context, lang string) ([]EpisodeSummary, 
 	published := []EpisodeSummary{} // jamais nil : une slice nil s'encode en null en JSON, pas en []
 	for _, episode := range all {
 		if isPublished(episode, now) {
-			published = append(published, episode)
+			published = append(published, c.withImageURL(episode))
 		}
 	}
 	return published, nil
@@ -111,7 +115,18 @@ func (c *Catalog) Episode(ctx context.Context, id string) (Episode, error) {
 	if !isPublished(episode.EpisodeSummary, c.now()) {
 		return Episode{}, ErrNotFound
 	}
+	episode.EpisodeSummary = c.withImageURL(episode.EpisodeSummary)
 	return episode, nil
+}
+
+// withImageURL renseigne l'adresse publique de l'illustration. La clé ne contient que [a-z0-9-/.]
+// (contrainte de la base) : rien à échapper.
+func (c *Catalog) withImageURL(episode EpisodeSummary) EpisodeSummary {
+	if episode.ImageKey != nil {
+		url := c.imagesBaseURL + "/" + *episode.ImageKey
+		episode.ImageURL = &url
+	}
+	return episode
 }
 
 // AudioURL renvoie une URL temporaire du fichier audio, ou ErrNotFound si l'épisode n'est pas publié.

@@ -175,7 +175,7 @@ components:
     EpisodeSummary:
       type: object
       unevaluatedProperties: false
-      required: [id, number, slug, title, reference, durationSeconds, publishedAt, series, themes]
+      required: [id, number, slug, title, reference, durationSeconds, publishedAt, series, themes, imageUrl]
       properties:
         id:
           type: string
@@ -208,6 +208,15 @@ components:
           description: Les thèmes de l'épisode, dans leur ordre d'affichage ; vide s'il n'en a aucun.
           items:
             $ref: "#/components/schemas/ThemeRef"
+        imageUrl:
+          description: >-
+            Illustration de l'épisode (ADR-0009) : WebP 960 × 540, adresse publique qui ne change jamais
+            (l'image se garde en cache). null si l'épisode n'en a pas.
+          anyOf:
+            - type: string
+              format: uri
+              example: https://media.rawiaudio.com/fr/001-les-gens-de-la-caverne/image-16x9.webp
+            - type: "null"
     Episode:
       allOf:
         - $ref: "#/components/schemas/EpisodeSummary"

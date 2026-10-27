@@ -13,6 +13,7 @@ func setValidEnv(t *testing.T) {
 	t.Setenv("R2_BUCKET", "rawi-audio")
 	t.Setenv("R2_ACCESS_KEY_ID", "cle")
 	t.Setenv("R2_SECRET_ACCESS_KEY", "secret")
+	t.Setenv("IMAGES_BASE_URL", "")
 }
 
 func TestLoadConfig(t *testing.T) {
@@ -28,6 +29,36 @@ func TestLoadConfig(t *testing.T) {
 		}
 		if cfg.R2Bucket != "rawi-audio" {
 			t.Errorf("R2Bucket = %q, attendu rawi-audio", cfg.R2Bucket)
+		}
+	})
+
+	t.Run("IMAGES_BASE_URL : par défaut, et sans / final", func(t *testing.T) {
+		for value, want := range map[string]string{
+			"":                       "https://media.rawiaudio.com",
+			"http://localhost:8471/": "http://localhost:8471",
+			"https://media.example":  "https://media.example",
+		} {
+			setValidEnv(t)
+			t.Setenv("IMAGES_BASE_URL", value)
+
+			cfg, err := loadConfig()
+			if err != nil {
+				t.Fatalf("%q : erreur inattendue : %v", value, err)
+			}
+			if cfg.ImagesBaseURL != want {
+				t.Errorf("%q : ImagesBaseURL = %q, attendu %q", value, cfg.ImagesBaseURL, want)
+			}
+		}
+	})
+
+	t.Run("IMAGES_BASE_URL invalide : refusée au démarrage", func(t *testing.T) {
+		for _, value := range []string{"media.rawiaudio.com", "ftp://media.example", "https://", "https://media.example?v=1", "https://media.example#a"} {
+			setValidEnv(t)
+			t.Setenv("IMAGES_BASE_URL", value)
+
+			if _, err := loadConfig(); err == nil || !strings.Contains(err.Error(), "IMAGES_BASE_URL") {
+				t.Errorf("%q : erreur = %v, attendu un refus qui nomme IMAGES_BASE_URL", value, err)
+			}
 		}
 	})
 

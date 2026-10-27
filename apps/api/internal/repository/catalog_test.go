@@ -15,7 +15,8 @@ import (
 )
 
 // catalogFixture applique les vraies migrations dans un schéma jetable, puis insère :
-// fr-001 publié avec série et deux sources, fr-002 brouillon sans série, fr-003 programmé, en-001 en anglais.
+// fr-001 publié avec série, deux sources et une illustration, fr-002 brouillon sans série, fr-003 programmé,
+// en-001 en anglais.
 func catalogFixture(t *testing.T) *pgxpool.Pool {
 	t.Helper()
 	pool := pgtest.Pool(t)
@@ -24,11 +25,11 @@ func catalogFixture(t *testing.T) *pgxpool.Pool {
 	}
 	_, err := pool.Exec(t.Context(), `
 		INSERT INTO series (id, lang, title) VALUES ('fr-al-kahf', 'fr', 'Al-Kahf');
-		INSERT INTO episodes (id, lang, number, slug, title, reference, duration_seconds, published_at, summary, series_id, series_part) VALUES
-			('fr-001', 'fr', 1, 'un', 'Un', 'Réf 1', 392, '2026-10-16 00:00:00+00', '{"premier", "second"}', 'fr-al-kahf', 2),
-			('fr-002', 'fr', 2, 'deux', 'Deux', 'Réf 2', 400, NULL, '{}', NULL, NULL),
-			('fr-003', 'fr', 3, 'trois', 'Trois', 'Réf 3', 410, '2099-01-01 00:00:00+00', '{}', NULL, NULL),
-			('en-001', 'en', 1, 'one', 'One', 'Ref 1', 380, '2026-10-16 00:00:00+00', '{}', NULL, NULL);
+		INSERT INTO episodes (id, lang, number, slug, title, reference, duration_seconds, published_at, summary, series_id, series_part, image_key) VALUES
+			('fr-001', 'fr', 1, 'un', 'Un', 'Réf 1', 392, '2026-10-16 00:00:00+00', '{"premier", "second"}', 'fr-al-kahf', 2, 'fr/001-un/image-16x9.webp'),
+			('fr-002', 'fr', 2, 'deux', 'Deux', 'Réf 2', 400, NULL, '{}', NULL, NULL, NULL),
+			('fr-003', 'fr', 3, 'trois', 'Trois', 'Réf 3', 410, '2099-01-01 00:00:00+00', '{}', NULL, NULL, NULL),
+			('en-001', 'en', 1, 'one', 'One', 'Ref 1', 380, '2026-10-16 00:00:00+00', '{}', NULL, NULL, NULL);
 		-- Insérées à l'envers : l'ordre de lecture doit suivre position.
 		INSERT INTO episode_sources (episode_id, position, label, url) VALUES
 			('fr-001', 2, 'Deuxième', 'https://shamela.ws/book/42/2'),
@@ -102,6 +103,9 @@ func TestEpisodeReadsSummaryAndOrderedSources(t *testing.T) {
 	if got.ID != "fr-001" || got.Series == nil {
 		t.Errorf("fiche = %+v", got.EpisodeSummary)
 	}
+	if got.ImageKey == nil || *got.ImageKey != "fr/001-un/image-16x9.webp" {
+		t.Errorf("clé de l'illustration = %v, attendu fr/001-un/image-16x9.webp", got.ImageKey)
+	}
 	if want := []string{"premier", "second"}; !slices.Equal(got.Summary, want) {
 		t.Errorf("résumé = %v, attendu %v", got.Summary, want)
 	}
@@ -124,6 +128,9 @@ func TestEpisodeWithoutSourcesOrSummaryHasEmptySlices(t *testing.T) {
 	// Des slices nil s'encoderaient en null dans le JSON de la fiche.
 	if got.Summary == nil || got.Sources == nil {
 		t.Errorf("résumé = %#v, sources = %#v, attendu deux slices vides non nil", got.Summary, got.Sources)
+	}
+	if got.ImageKey != nil {
+		t.Errorf("clé de l'illustration = %q, attendu nil (pas d'illustration)", *got.ImageKey)
 	}
 }
 
@@ -192,6 +199,30 @@ func TestSeriesPartsAreConsistent(t *testing.T) {
 	} {
 		if _, err := pool.Exec(t.Context(), statement); err == nil {
 			t.Errorf("%s : insertion acceptée, attendu un refus de la base", name)
+		}
+	}
+}
+
+func TestImageKeyMustBelongToEpisode(t *testing.T) {
+	pool := catalogFixture(t)
+
+	for name, key := range map[string]string{
+		"clé d'un autre épisode": "fr/002-deux/image-16x9.webp",
+		"autre langue":           "en/001-un/image-16x9.webp",
+		"pas du webp":            "fr/001-un/image-16x9.png",
+		"majuscules":             "fr/001-un/Image-16x9.webp",
+		"remontée de dossier":    "fr/001-un/../002-deux/image.webp",
+		"sous-dossier":           "fr/001-un/sous/image.webp",
+		"paramètres":             "fr/001-un/image-16x9.webp?v=2",
+	} {
+		if _, err := pool.Exec(t.Context(), `UPDATE episodes SET image_key = $1 WHERE id = 'fr-001'`, key); err == nil {
+			t.Errorf("%s (%s) : clé acceptée, attendu un refus de la base", name, key)
+		}
+	}
+	// Une image remplacée prend une nouvelle clé ; un épisode peut aussi n'en avoir aucune.
+	for _, key := range []any{"fr/001-un/image-16x9-2.webp", nil} {
+		if _, err := pool.Exec(t.Context(), `UPDATE episodes SET image_key = $1 WHERE id = 'fr-001'`, key); err != nil {
+			t.Errorf("clé %v refusée : %v", key, err)
 		}
 	}
 }
