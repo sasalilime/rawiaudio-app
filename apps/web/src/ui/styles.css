@@ -76,8 +76,11 @@ a {
   border-radius: 2px;
 }
 
-/* Le titre reçoit le focus à chaque page pour les lecteurs d'écran : pas de contour pour ce focus-là. */
-h1:focus {
+/* Le titre reçoit le focus à chaque page pour les lecteurs d'écran : pas de contour pour ce focus-là.
+   Même chose pour les messages qui le reçoivent après une action (erreur, nouvel état du compte). */
+h1:focus,
+.form-alert:focus,
+.account-lead:focus {
   outline: none;
 }
 
@@ -92,6 +95,12 @@ button {
   cursor: pointer;
 }
 
+/* Pendant un appel au serveur */
+button:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -102,9 +111,31 @@ button {
   white-space: nowrap;
 }
 
-/* En-tête */
+/* En-tête : la marque à gauche, « Mon compte » à droite */
 .masthead {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
   padding-block: 1.25rem 0.5rem;
+}
+
+.account-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0.25rem 1rem;
+  border: 1px solid var(--ambre);
+  border-radius: 999px;
+  color: var(--ambre);
+  font-size: 0.95rem;
+  text-decoration: none;
+}
+
+.account-link[aria-current="page"] {
+  background: var(--ambre);
+  color: var(--nuit);
 }
 
 .brand {
@@ -453,4 +484,89 @@ button.secondary {
 /* Dans la grande carte, l'image occupe toute la largeur, au-dessus du numéro et du titre. */
 .episode-cover {
   grid-column: 1 / -1;
+}
+
+/* Connexion et compte (ADR-0012) */
+.page-heading {
+  margin-block: 0.25rem 1rem;
+  font-family: var(--titre);
+  font-weight: 400;
+  font-size: clamp(2rem, 8vw, 2.5rem);
+  line-height: 1.1;
+}
+
+.auth-step {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.auth-step p {
+  margin: 0;
+}
+
+.auth-step label {
+  margin-block-start: 0.5rem;
+  font-weight: 600;
+}
+
+.auth-step input {
+  width: 100%;
+  max-width: 24rem;
+  min-height: 3rem;
+  padding: 0.5rem 1.2rem;
+  font: inherit;
+  color: var(--papier);
+  background: rgba(245, 242, 236, 0.05);
+  border: 1px solid var(--brume);
+  border-radius: 999px;
+}
+
+.auth-step .code-input {
+  max-width: 12rem;
+  font-size: 1.4rem;
+  letter-spacing: 0.3em;
+  font-variant-numeric: tabular-nums;
+}
+
+.auth-hint {
+  color: var(--brume);
+  font-size: 0.95rem;
+}
+
+.auth-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.form-alert {
+  margin-block: 0 1.25rem;
+  padding-inline-start: 0.75rem;
+  border-inline-start: 3px solid var(--ambre);
+}
+
+/* Lien qui mène à une action : il a l'air d'un bouton principal */
+.button-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 3rem;
+  padding: 0.55rem 1.4rem;
+  border-radius: 999px;
+  background: var(--ambre);
+  color: var(--nuit);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* Confirmation de la suppression du compte, dans la page */
+.account-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-block-start: 0.5rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--ambre);
+  border-radius: 0.75rem;
 }

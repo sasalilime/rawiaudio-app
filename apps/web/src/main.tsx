@@ -2,6 +2,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { nextPart } from '@rawiaudio/shared/core/domain/catalog.ts'
+import { createAccountSession } from '@rawiaudio/shared/core/useCases/accountSession.ts'
 import { createDownloadManager } from '@rawiaudio/shared/core/useCases/downloadManager.ts'
 import { createGetEpisode } from '@rawiaudio/shared/core/useCases/getEpisode.ts'
 import { createListCatalog } from '@rawiaudio/shared/core/useCases/listCatalog.ts'
@@ -10,6 +11,7 @@ import { createPickRandomEpisode } from '@rawiaudio/shared/core/useCases/pickRan
 import { createPlaybackSession } from '@rawiaudio/shared/core/useCases/playbackSession.ts'
 import { createHtmlAudioPlayer } from './infra/audio/htmlAudioPlayer.ts'
 import { createApi } from '@rawiaudio/shared/http/apiClient.ts'
+import { createHttpAuthGateway } from '@rawiaudio/shared/http/authGateway.ts'
 import { createHttpEpisodeRepository } from '@rawiaudio/shared/http/episodeRepository.ts'
 import { createCacheAudioStore } from './infra/offline/cacheAudioStore.ts'
 import { registerServiceWorker, unregisterServiceWorkers } from './infra/offline/registerServiceWorker.ts'
@@ -22,10 +24,13 @@ import { UseCasesProvider, type UseCases } from '@rawiaudio/shared/ui/useCases.t
 import './ui/styles.css'
 
 // En dev, /api passe par le relais de Vite ; en production, VITE_API_URL vaut https://api.rawiaudio.com.
-const episodes = createHttpEpisodeRepository(createApi(import.meta.env.VITE_API_URL ?? '/api'))
+// credentials « include » : le navigateur envoie le cookie de session, posé par api.rawiaudio.com (ADR-0012).
+const api = createApi(import.meta.env.VITE_API_URL ?? '/api', fetch, { credentials: 'include' })
+const episodes = createHttpEpisodeRepository(api)
 const catalogCache = createLocalCatalogCache(localStorage)
 const downloads = createDownloadManager(episodes, createCacheAudioStore())
 const history = createListeningHistory(createLocalHistoryStore(localStorage))
+const account = createAccountSession(createHttpAuthGateway(api, 'web'))
 
 const useCases: UseCases = {
   listCatalog: createListCatalog(episodes, catalogCache),
@@ -46,10 +51,13 @@ const useCases: UseCases = {
   downloads,
   history,
   pickRandom: createPickRandomEpisode(Math.random),
+  account,
 }
 
 // Les épisodes déjà téléchargés ; un échec (Cache API indisponible) laisse simplement la liste vide.
 downloads.load().catch((error: unknown) => console.warn('téléchargements illisibles', error))
+// Y a-t-il une session ? load ne lève rien : hors ligne, l'état reste « unknown » et Mon compte propose de réessayer.
+void account.load()
 
 if (import.meta.env.PROD) registerServiceWorker()
 else unregisterServiceWorkers()

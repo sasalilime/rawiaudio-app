@@ -19,9 +19,11 @@ export function useRoute(): Route {
   return parseRoute(useSyncExternalStore(subscribe, getPathname))
 }
 
-export function navigate(path: string) {
+/** replace : remplace l'adresse au lieu d'en ajouter une (redirection, jeton de connexion à effacer). */
+export function navigate(path: string, { replace = false } = {}) {
   if (path === location.pathname) return
-  history.pushState(null, '', path)
+  if (replace) history.replaceState(null, '', path)
+  else history.pushState(null, '', path)
   dispatchEvent(new Event(NAVIGATE))
 }
 
