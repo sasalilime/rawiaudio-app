@@ -65,7 +65,7 @@ docs/adr/    décisions d'architecture
 ## App mobile (`apps/mobile`)
 - Expo (React Native), ADR-0008. Écrans dans `src/app/` (expo-router : un fichier par écran), composants dans `src/ui/`.
 - Comme la PWA : `infra/audio` (expo-audio, écran verrouillé), `infra/offline` (expo-file-system), `src/main.ts` seul point d'assemblage, `src/architecture.test.ts`.
-- Téléchargements dans le cache de l'appli, jamais dans Documents : Apple refuse qu'un contenu re-téléchargeable parte dans la sauvegarde iCloud.
+- Téléchargements dans le cache de l'appli, jamais dans Documents : Apple refuse qu'un contenu re-téléchargeable parte dans la sauvegarde iCloud. Audio dans `audio/`, illustrations dans `images/` ; une image s'affiche par `downloads.imageSource(url)`, qui choisit la copie locale (`EpisodeImage`).
 - Accessibilité : `accessibilityRole` et libellé sur chaque élément touchable, cibles de 48 points au moins.
 - Style du site : palette et polices dans `src/ui/theme.ts` ; Lalezar et Literata en TTF dans `assets/fonts/` (provenance dans son README), symbole et icônes dans `assets/images/`.
 - Pièges :

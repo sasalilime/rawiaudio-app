@@ -24,19 +24,21 @@ export function SeriesRow({ series }: { series: SeriesOverview }) {
         .join(', ')}
       style={({ pressed }) => [rowStyles.row, pressed && rowStyles.pressed]}
     >
-      <View style={rowStyles.number}>
-        <Text maxFontSizeMultiplier={NUMBER_MAX_SCALE} style={[text.number, styles.count]}>
-          {series.parts.length}
-        </Text>
-        <Text maxFontSizeMultiplier={NUMBER_MAX_SCALE} style={[text.meta, styles.count]}>
-          {fr.partWord(series.parts.length)}
-        </Text>
-      </View>
-      <View style={rowStyles.texts}>
-        <Text style={rowStyles.title}>{series.title}</Text>
-        {/* Le nombre de parties est déjà à gauche : ici, la durée totale. */}
-        <Text style={text.meta}>{formatDuration(series.durationSeconds)}</Text>
-        {progress && <Text style={rowStyles.marks}>{progress}</Text>}
+      <View style={rowStyles.line}>
+        <View style={rowStyles.number}>
+          <Text maxFontSizeMultiplier={NUMBER_MAX_SCALE} style={[text.number, styles.count]}>
+            {series.parts.length}
+          </Text>
+          <Text maxFontSizeMultiplier={NUMBER_MAX_SCALE} style={[text.meta, styles.count]}>
+            {fr.partWord(series.parts.length)}
+          </Text>
+        </View>
+        <View style={rowStyles.texts}>
+          <Text style={rowStyles.title}>{series.title}</Text>
+          {/* Le nombre de parties est déjà à gauche : ici, la durée totale. */}
+          <Text style={text.meta}>{formatDuration(series.durationSeconds)}</Text>
+          {progress && <Text style={rowStyles.marks}>{progress}</Text>}
+        </View>
       </View>
     </Pressable>
   )

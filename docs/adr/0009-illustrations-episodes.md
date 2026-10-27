@@ -46,6 +46,19 @@
 - Le poste qui pourrait coûter, ce sont les lectures. Le cache d'un an les absorbe : une image servie par le cache de Cloudflare n'atteint pas R2. La documentation ne l'écrit pas noir sur blanc ; c'est le principe même du cache.
 - Le poids réduit sert surtout les familles : moins de données mobiles, des écrans qui s'affichent plus vite.
 
+## Vérification (PWA, 27 octobre 2026)
+Dans Chrome, avec la PWA construite, la vraie API et un faux `media.rawiaudio.com` qui répond comme R2 (CORS, cache d'un an) :
+- l'illustration s'affiche en tête de la fiche et dans la carte du dernier épisode, et sur l'écran verrouillé (Media Session) ;
+- au téléchargement d'un épisode, elle est gardée dans le cache `rawi-images-v1`, en réponse CORS de 40 Ko (pas une réponse opaque, qui compterait pour des Mo dans le quota) ;
+- sans réseau, et le cache HTTP du navigateur vidé, elle s'affiche encore : c'est le service worker qui la sert ;
+- sans copie ni réseau, elle disparaît de la page, sans icône d'image cassée.
+- À vérifier sur iPhone : l'image de l'écran verrouillé sans réseau. Le navigateur la charge lui-même, peut-être sans passer par le service worker.
+
+## App mobile (27 octobre 2026)
+- Pas de service worker : l'interface demande l'adresse à afficher (`downloads.imageSource`), la copie gardée sur le téléphone (`Paths.cache/images`) ou l'adresse en ligne.
+- L'écran verrouillé reçoit la même adresse : iOS (`URLSession`) et Android (`URL.openConnection`) lisent aussi une adresse `file://`, donc l'image d'un épisode téléchargé s'y affiche sans réseau.
+- Vérifié dans l'aperçu web de l'app : carte du dernier épisode, fiche avec et sans illustration, image injoignable retirée. Pas encore vérifié sur téléphone : le téléchargement de l'image et son affichage hors ligne.
+
 ## Conséquences
 - Une tranche qui touche le contrat, une migration, l'API, la PWA, l'app mobile et un runbook.
 - Le studio doit garder l'illustration sans texte, en plus de la miniature.

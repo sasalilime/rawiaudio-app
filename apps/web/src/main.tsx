@@ -35,7 +35,8 @@ const useCases: UseCases = {
     player: createHtmlAudioPlayer(document),
     positions: createLocalPositionStore(localStorage),
     now: () => new Date(),
-    describe: (episode) => ({ title: episode.title, artist: fr.appName, artworkUrl: '/icons/icon-512.png' }),
+    // L'illustration de l'épisode sur l'écran verrouillé (ADR-0009), l'icône de l'appli sinon.
+    describe: (episode) => ({ title: episode.title, artist: fr.appName, artworkUrl: episode.imageUrl ?? '/icons/icon-512.png' }),
     localSource: downloads.localSource,
     // La suite d'une série d'après le dernier catalogue connu, disponible même hors ligne.
     // ponytail: français seulement, comme l'interface ; la langue de l'épisode quand l'arabe arrivera.

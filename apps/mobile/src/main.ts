@@ -32,8 +32,14 @@ export const useCases: UseCases = {
     player: createExpoAudioPlayer(),
     positions: createLocalPositionStore(localStorage),
     now: () => new Date(),
-    // ponytail: l'image de l'écran verrouillé vient de la PWA, absente tant qu'elle n'est pas en ligne.
-    describe: (episode) => ({ title: episode.title, artist: fr.appName, artworkUrl: 'https://app.rawiaudio.com/icons/icon-512.png' }),
+    // L'illustration de l'épisode sur l'écran verrouillé (ADR-0009), sa copie locale s'il est téléchargé :
+    // iOS et Android lisent aussi une adresse file://. Sans illustration, l'icône de l'appli.
+    // ponytail: cette icône vient de la PWA, absente tant qu'elle n'est pas en ligne.
+    describe: (episode) => ({
+      title: episode.title,
+      artist: fr.appName,
+      artworkUrl: episode.imageUrl ? downloads.imageSource(episode.imageUrl) : 'https://app.rawiaudio.com/icons/icon-512.png',
+    }),
     localSource: downloads.localSource,
     // La suite d'une série d'après le dernier catalogue connu, disponible même hors ligne.
     // ponytail: français seulement, comme l'interface ; la langue de l'épisode quand l'arabe arrivera.

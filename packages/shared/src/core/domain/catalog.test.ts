@@ -17,6 +17,7 @@ function episode(number: number, themes: ThemeRef[], part?: number): EpisodeSumm
     publishedAt: new Date(Date.UTC(2026, 9, number)),
     series: part ? { id: 'fr-moussa', title: 'Moussa et Pharaon', part } : null,
     themes,
+    imageUrl: null,
   }
 }
 

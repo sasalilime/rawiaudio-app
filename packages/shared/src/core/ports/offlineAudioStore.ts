@@ -8,6 +8,13 @@ export interface OfflineAudioStore {
    */
   save(episodeId: string, url: string, onProgress: (fraction: number) => void): Promise<void>
   remove(episodeId: string): Promise<void>
+  /** Garde l'illustration d'un épisode téléchargé (ADR-0009), pour l'afficher sans réseau. */
+  saveImage(url: string): Promise<void>
+  /**
+   * Adresse locale de l'illustration gardée, ou null. Null aussi dans la PWA : son service worker sert
+   * la copie sous l'adresse en ligne, qui ne change jamais. Synchrone : l'affichage ne doit rien attendre.
+   */
+  localImageUrl(url: string): string | null
   /** Adresse locale à donner au lecteur. */
   localUrl(episodeId: string): string
   /** Demande au navigateur de ne pas effacer les téléchargements quand l'espace manque. */

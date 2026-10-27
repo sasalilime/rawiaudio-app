@@ -8,6 +8,7 @@ import { Link } from '../navigation.tsx'
 import { episodePath, seriesPath } from '../router.ts'
 import { PageTitle } from '../components/PageTitle.tsx'
 import { DownloadButton } from '../components/DownloadButton.tsx'
+import { EpisodeImage } from '../components/EpisodeImage.tsx'
 import { PlayButton } from '../components/PlayButton.tsx'
 import { useEpisode } from '@rawiaudio/shared/ui/hooks/useEpisode.ts'
 
@@ -24,6 +25,7 @@ export function EpisodePage({ id }: { id: string }) {
       {state.status === 'error' && <EpisodeError error={state.error} retry={retry} />}
       {state.status === 'ok' && (
         <article className="episode">
+          {state.data.imageUrl && <EpisodeImage url={state.data.imageUrl} className="episode-illustration" />}
           <p className="episode-number episode-number--large" aria-hidden="true">
             {state.data.number}
           </p>

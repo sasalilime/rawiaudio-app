@@ -8,6 +8,7 @@ import { fr } from '@rawiaudio/shared/ui/i18n/fr.ts'
 import { useCatalog } from '@rawiaudio/shared/ui/hooks/useCatalog.ts'
 import { useEpisode } from '@rawiaudio/shared/ui/hooks/useEpisode.ts'
 import { DownloadButton } from '../../ui/components/DownloadButton.tsx'
+import { EpisodeImage } from '../../ui/components/EpisodeImage.tsx'
 import { ErrorNotice } from '../../ui/components/ErrorNotice.tsx'
 import { PlayButton } from '../../ui/components/PlayButton.tsx'
 import { episodeHref, seriesHref } from '../../ui/routes.ts'
@@ -34,6 +35,7 @@ export default function EpisodeScreen() {
         ))}
       {state.status === 'ok' && (
         <>
+          {state.data.imageUrl && <EpisodeImage url={state.data.imageUrl} style={styles.illustration} />}
           <Text
             maxFontSizeMultiplier={NUMBER_MAX_SCALE}
             style={[text.number, styles.bigNumber]}
@@ -114,6 +116,7 @@ function SeriesInfo({ episode }: { episode: Episode }) {
 }
 
 const styles = StyleSheet.create({
+  illustration: { marginBottom: 8 },
   bigNumber: { fontSize: 80, lineHeight: 88 },
   actions: { gap: 12, marginTop: 12, marginBottom: 16 },
   sources: { gap: 8, marginTop: 24, paddingTop: 8, borderTopWidth: 1, borderTopColor: colors.trait },

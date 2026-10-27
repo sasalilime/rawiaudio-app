@@ -6,12 +6,13 @@ import { fr } from '@rawiaudio/shared/ui/i18n/fr.ts'
 import { useDownloads } from '@rawiaudio/shared/ui/hooks/useDownloads.ts'
 import { useHistory } from '@rawiaudio/shared/ui/hooks/useHistory.ts'
 import { episodeHref } from '../routes.ts'
+import { EpisodeImage } from './EpisodeImage.tsx'
 import { colors, fonts, NUMBER_MAX_SCALE, text, TOUCH_TARGET } from '../theme.ts'
 
 /**
  * Une ligne du catalogue : toute la ligne mène à la fiche de l'épisode.
  * inSeries : sur la page de sa série, le grand numéro est celui de la partie, et le nom de la série est superflu.
- * framed : encadrée d'ambre, pour le dernier épisode, celui qu'on écoute d'abord.
+ * framed : encadrée d'ambre, avec l'illustration au-dessus : le dernier épisode, celui qu'on écoute d'abord.
  */
 export function EpisodeRow({ episode, inSeries = false, framed = false }: { episode: EpisodeSummary; inSeries?: boolean; framed?: boolean }) {
   const [downloads] = useDownloads()
@@ -36,25 +37,28 @@ export function EpisodeRow({ episode, inSeries = false, framed = false }: { epis
       accessibilityLabel={[`${label} : ${episode.title}`, ...lines, ...marks].join(', ')}
       style={({ pressed }) => [rowStyles.row, framed && rowStyles.framed, pressed && rowStyles.pressed]}
     >
-      <Text maxFontSizeMultiplier={NUMBER_MAX_SCALE} style={[text.number, rowStyles.number]}>
-        {number}
-      </Text>
-      <View style={rowStyles.texts}>
-        <Text style={rowStyles.title}>{episode.title}</Text>
-        {lines.map((line) => (
-          <Text key={line} style={text.meta}>
-            {line}
-          </Text>
-        ))}
-        {marks.length > 0 && (
-          <View style={rowStyles.marksRow}>
-            {marks.map((mark) => (
-              <Text key={mark} style={rowStyles.marks}>
-                {mark}
-              </Text>
-            ))}
-          </View>
-        )}
+      {framed && episode.imageUrl && <EpisodeImage url={episode.imageUrl} />}
+      <View style={rowStyles.line}>
+        <Text maxFontSizeMultiplier={NUMBER_MAX_SCALE} style={[text.number, rowStyles.number]}>
+          {number}
+        </Text>
+        <View style={rowStyles.texts}>
+          <Text style={rowStyles.title}>{episode.title}</Text>
+          {lines.map((line) => (
+            <Text key={line} style={text.meta}>
+              {line}
+            </Text>
+          ))}
+          {marks.length > 0 && (
+            <View style={rowStyles.marksRow}>
+              {marks.map((mark) => (
+                <Text key={mark} style={rowStyles.marks}>
+                  {mark}
+                </Text>
+              ))}
+            </View>
+          )}
+        </View>
       </View>
     </Pressable>
   )
@@ -63,15 +67,10 @@ export function EpisodeRow({ episode, inSeries = false, framed = false }: { epis
 export const rowStyles = StyleSheet.create({
   /** Autour d'une suite de lignes : le filet du haut, comme sur la PWA. */
   list: { borderTopWidth: 1, borderTopColor: colors.trait },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 16,
-    minHeight: TOUCH_TARGET,
-    paddingVertical: 18,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.trait,
-  },
+  /** Le cadre touchable : l'illustration éventuelle (grande carte), puis la ligne. */
+  row: { gap: 16, minHeight: TOUCH_TARGET, paddingVertical: 18, borderBottomWidth: 1, borderBottomColor: colors.trait },
+  /** Le grand numéro à gauche, les textes à droite. */
+  line: { flexDirection: 'row', alignItems: 'flex-start', gap: 16 },
   framed: { borderTopWidth: 1, borderTopColor: colors.ambre, borderBottomColor: colors.ambre },
   pressed: { opacity: 0.7 },
   number: { width: 56, textAlign: 'right' },

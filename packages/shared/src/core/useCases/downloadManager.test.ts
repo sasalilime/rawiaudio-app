@@ -15,6 +15,7 @@ const episode: EpisodeSummary = {
   publishedAt: new Date('2026-10-16T00:00:00Z'),
   series: null,
   themes: [],
+  imageUrl: null,
 }
 
 const episodes: EpisodeRepository = {
@@ -25,7 +26,7 @@ const episodes: EpisodeRepository = {
   getAudioUrl: async (id) => ({ url: `https://r2/${id}?sig=1`, expiresAt: new Date(Date.now() + 3_600_000) }),
 }
 
-function memoryStore(already: string[] = [], failSave = false) {
+function memoryStore(already: string[] = [], failSave = false, failImage = false) {
   const saved = new Set(already)
   const calls: string[] = []
   const store: OfflineAudioStore = {
@@ -39,6 +40,11 @@ function memoryStore(already: string[] = [], failSave = false) {
     remove: async (id) => {
       saved.delete(id)
     },
+    saveImage: async (url) => {
+      calls.push(`image ${url}`)
+      if (failImage) throw new TypeError('Failed to fetch')
+    },
+    localImageUrl: (url) => (url.includes('gardee') ? `file:///cache/${encodeURIComponent(url)}` : null),
     localUrl: (id) => `/offline/${id}`,
     persist: async () => {
       calls.push('persist')
@@ -71,6 +77,30 @@ test("télécharge depuis une URL neuve, rangée sous l'identifiant, avec la pro
     '{"status":"downloading","progress":0.5}',
     '{"status":"downloaded"}',
   ])
+})
+
+test("l'illustration est gardée après l'audio, et son échec ne fait pas échouer l'épisode", async () => {
+  const illustrated = { ...episode, imageUrl: 'https://media.rawiaudio.com/fr/001-un/image-16x9.webp' }
+  for (const failImage of [false, true]) {
+    const { store, calls } = memoryStore([], false, failImage)
+    const manager = createDownloadManager(episodes, store)
+
+    await manager.download(illustrated)
+
+    assert.deepEqual(calls, [
+      'save fr-001 https://r2/fr-001?sig=1',
+      'image https://media.rawiaudio.com/fr/001-un/image-16x9.webp',
+      'persist',
+    ])
+    assert.deepEqual(manager.getSnapshot().get('fr-001'), { status: 'downloaded' }, `échec de l'image : ${failImage}`)
+  }
+})
+
+test("adresse d'une illustration : la copie locale si elle existe, sinon l'adresse en ligne", () => {
+  const manager = createDownloadManager(episodes, memoryStore().store)
+
+  assert.equal(manager.imageSource('https://media/gardee.webp'), 'file:///cache/https%3A%2F%2Fmedia%2Fgardee.webp')
+  assert.equal(manager.imageSource('https://media/autre.webp'), 'https://media/autre.webp')
 })
 
 test('échec du téléchargement : état error, et pas de copie locale', async () => {

@@ -33,7 +33,7 @@ export function CatalogPage() {
             <h2 id="latest-title" className="section-title">
               {fr.latestEpisode}
             </h2>
-            <EpisodeRow episode={state.data.latest} />
+            <EpisodeRow episode={state.data.latest} featured />
           </section>
 
           {state.data.sections.map((section) => {

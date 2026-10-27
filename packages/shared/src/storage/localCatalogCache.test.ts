@@ -31,6 +31,7 @@ const fiche: Episode = {
   publishedAt: new Date('2026-10-16T00:00:00Z'),
   series: { id: 'fr-moussa', title: 'Moussa et Pharaon', part: 2 },
   themes: [{ id: 'fr-histoires-du-coran', title: 'Histoires du Coran', position: 1 }],
+  imageUrl: 'https://media.rawiaudio.com/fr/001-un/image-16x9.webp',
   summary: ['p'],
   sources: [{ label: 'Saadi', url: 'https://shamela.ws/book/42' }],
 }
@@ -60,4 +61,15 @@ test('un catalogue gardé avant les thèmes est complété par une liste vide', 
   storage.setItem('rawi:catalog:fr', JSON.stringify([old]))
 
   assert.deepEqual(createLocalCatalogCache(storage).getList('fr')?.[0]?.themes, [])
+})
+
+test('un catalogue gardé avant les illustrations est complété par imageUrl null', () => {
+  const storage = memoryStorage()
+  const { imageUrl: _absent, ...old } = fiche
+  storage.setItem('rawi:catalog:fr', JSON.stringify([old]))
+  storage.setItem('rawi:episode:fr-001', JSON.stringify(old))
+
+  const cache = createLocalCatalogCache(storage)
+  assert.equal(cache.getList('fr')?.[0]?.imageUrl, null)
+  assert.equal(cache.getEpisode('fr-001')?.imageUrl, null)
 })

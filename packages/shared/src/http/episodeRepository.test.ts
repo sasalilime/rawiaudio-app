@@ -26,6 +26,7 @@ const episodeDto = {
   publishedAt: '2026-10-16T00:00:00Z',
   series: { id: 'fr-moussa', title: 'Moussa et Pharaon', part: 2 },
   themes: [{ id: 'fr-prophetes', title: 'Les prophètes', position: 2 }],
+  imageUrl: 'https://media.rawiaudio.com/fr/001-un/image-16x9.webp',
 }
 
 test('traduit la liste en entités', async () => {
@@ -35,6 +36,12 @@ test('traduit la liste en entités', async () => {
   assert.ok(episodes[0]?.publishedAt instanceof Date)
   assert.equal(episodes[0]?.publishedAt.toISOString(), '2026-10-16T00:00:00.000Z')
   assert.equal(episodes[0]?.series, null)
+  assert.equal(episodes[0]?.imageUrl, 'https://media.rawiaudio.com/fr/001-un/image-16x9.webp')
+})
+
+test('sans illustration : imageUrl null', async () => {
+  const [episode] = await repositoryAnswering(json(200, { episodes: [{ ...episodeDto, imageUrl: null }] })).list('fr')
+  assert.equal(episode?.imageUrl, null)
 })
 
 test('traduit une fiche en entité', async () => {

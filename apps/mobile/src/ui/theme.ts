@@ -7,6 +7,7 @@ export const colors = {
   papier: '#F5F2EC',
   brume: '#A9AEBC',
   trait: 'rgba(212, 162, 76, 0.28)',
+  carte: 'rgba(245, 242, 236, 0.05)', // fond d'une image en attente, comme sur le site
 } as const
 
 /** Noms internes des polices (assets/fonts/README.md). Jamais de fontWeight avec elles : Android changerait de police. */

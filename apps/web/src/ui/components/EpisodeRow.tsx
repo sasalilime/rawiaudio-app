@@ -5,12 +5,14 @@ import { useDownloads } from '@rawiaudio/shared/ui/hooks/useDownloads.ts'
 import { useHistory } from '@rawiaudio/shared/ui/hooks/useHistory.ts'
 import { Link } from '../navigation.tsx'
 import { episodePath } from '../router.ts'
+import { EpisodeImage } from './EpisodeImage.tsx'
 
 /**
  * Une ligne du catalogue : toute la ligne mène à la fiche de l'épisode.
  * inSeries : sur la page de sa série, le grand numéro est celui de la partie, et le nom de la série est superflu.
+ * featured : en grande carte, avec l'illustration au-dessus (le dernier épisode, à l'accueil).
  */
-export function EpisodeRow({ episode, inSeries = false }: { episode: EpisodeSummary; inSeries?: boolean }) {
+export function EpisodeRow({ episode, inSeries = false, featured = false }: { episode: EpisodeSummary; inSeries?: boolean; featured?: boolean }) {
   const [downloads] = useDownloads()
   const heard = useHistory()
   const number = inSeries && episode.series ? episode.series.part : episode.number
@@ -18,6 +20,7 @@ export function EpisodeRow({ episode, inSeries = false }: { episode: EpisodeSumm
 
   return (
     <Link href={episodePath(episode.id)} className="episode-row">
+      {featured && episode.imageUrl && <EpisodeImage url={episode.imageUrl} className="episode-cover" />}
       <span className="episode-number" aria-hidden="true">
         {number}
       </span>

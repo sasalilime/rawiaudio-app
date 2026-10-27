@@ -46,6 +46,7 @@ function toSummary(episode: dto.EpisodeSummary): EpisodeSummary {
     publishedAt: new Date(episode.publishedAt),
     series: episode.series && { id: episode.series.id, title: episode.series.title, part: episode.series.part },
     themes: episode.themes.map((theme) => ({ id: theme.id, title: theme.title, position: theme.position })),
+    imageUrl: episode.imageUrl,
   }
 }
 

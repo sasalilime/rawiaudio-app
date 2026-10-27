@@ -432,3 +432,25 @@ button.secondary {
   margin: 0.25rem 0 0;
   font-size: 0.95rem;
 }
+
+/* Illustrations des épisodes (ADR-0009) : 16:9, coins arrondis comme sur le site. Le fond tient la place
+   tant que l'image n'est pas arrivée ; si elle manque, EpisodeImage la retire. */
+.episode-illustration,
+.episode-cover {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 0.75rem;
+  background: rgba(245, 242, 236, 0.05);
+}
+
+.episode-illustration {
+  margin-block: 0.5rem 1.5rem;
+}
+
+/* Dans la grande carte, l'image occupe toute la largeur, au-dessus du numéro et du titre. */
+.episode-cover {
+  grid-column: 1 / -1;
+}

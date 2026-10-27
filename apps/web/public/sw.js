@@ -1,9 +1,11 @@
 // Service worker de Rawi, écrit à la main (CLAUDE.md : pas de vite-plugin-pwa).
 // 1. La coquille de l'appli en cache : elle s'ouvre sans réseau.
 // 2. Les épisodes téléchargés servis au lecteur, en réponses 206 (Safari lit l'audio par plages d'octets).
+// 3. Les illustrations des épisodes téléchargés, servies depuis leur copie (ADR-0009).
 
 const SHELL_CACHE = 'rawi-shell-v1'
-const AUDIO_CACHE = 'rawi-audio-v1' // même nom dans src/infra/offline/cacheAudioStore.ts
+const AUDIO_CACHE = 'rawi-audio-v1' // mêmes noms dans src/infra/offline/cacheAudioStore.ts
+const IMAGES_CACHE = 'rawi-images-v1'
 
 const STATIC_FILES = [
   '/',
@@ -46,8 +48,13 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const { request } = event
   const url = new URL(request.url)
-  // API, R2 et tout ce qui n'est pas une lecture de l'appli elle-même : le réseau, directement.
-  if (request.method !== 'GET' || url.origin !== self.location.origin) return
+  if (request.method !== 'GET') return
+  if (url.origin !== self.location.origin) {
+    // Image d'un autre domaine (illustration) : sa copie si l'épisode est téléchargé, sinon le réseau.
+    // API, R2 et le reste : le réseau, directement.
+    if (request.destination === 'image') event.respondWith(fromImagesCache(request))
+    return
+  }
   if (url.pathname.startsWith('/offline/')) {
     event.respondWith(fromAudioCache(url.pathname, request.headers.get('range')))
     return
@@ -95,6 +102,11 @@ async function cacheFirst(request) {
     await cache.put(request, response.clone())
   }
   return response
+}
+
+// Une illustration ne change jamais sous la même adresse : la copie gardée vaut la version en ligne.
+async function fromImagesCache(request) {
+  return (await caches.match(request.url, { cacheName: IMAGES_CACHE })) ?? fetch(request)
 }
 
 // Safari commence par demander les octets 0 et 1 : sans réponse 206, il refuse de lire.

@@ -17,6 +17,7 @@ const episode = (id: string): EpisodeSummary => ({
   publishedAt: new Date('2026-10-16T00:00:00Z'),
   series: null,
   themes: [],
+  imageUrl: null,
 })
 
 // Laisse s'exécuter les promesses en attente (réponse de l'API simulée).

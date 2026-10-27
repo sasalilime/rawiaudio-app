@@ -17,6 +17,7 @@ const summary: EpisodeSummary = {
   publishedAt: new Date('2026-10-16T00:00:00Z'),
   series: null,
   themes: [],
+  imageUrl: null,
 }
 const fiche: Episode = { ...summary, summary: ['p'], sources: [] }
 

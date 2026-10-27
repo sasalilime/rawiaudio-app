@@ -39,7 +39,8 @@ export function createHtmlAudioPlayer(doc: Document): AudioPlayer {
     navigator.mediaSession.metadata = new MediaMetadata({
       title: metadata.title,
       artist: metadata.artist,
-      artwork: [{ src: metadata.artworkUrl, sizes: '512x512', type: 'image/png' }],
+      // Sans taille ni type : c'est l'illustration de l'épisode (WebP 16:9) ou l'icône de l'appli (PNG carré).
+      artwork: [{ src: metadata.artworkUrl }],
     })
     const handlers: [MediaSessionAction, MediaSessionActionHandler][] = [
       ['play', () => void audio.play().catch(() => undefined)], // refus : l'état reste « en pause », visible

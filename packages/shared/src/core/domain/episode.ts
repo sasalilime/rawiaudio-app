@@ -30,6 +30,8 @@ export interface EpisodeSummary {
   series: SeriesRef | null
   /** Dans l'ordre d'affichage des thèmes ; vide si l'épisode n'en a pas. */
   themes: ThemeRef[]
+  /** Illustration 16:9 (ADR-0009), à une adresse qui ne change jamais ; null si l'épisode n'en a pas. */
+  imageUrl: string | null
 }
 
 /** Un passage d'un livre de Shamela, cité sous l'épisode. */

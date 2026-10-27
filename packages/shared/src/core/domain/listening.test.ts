@@ -14,6 +14,7 @@ function episode(number: number, part?: number): EpisodeSummary {
     publishedAt: new Date(Date.UTC(2026, 9, number)),
     series: part ? { id: 'fr-moussa', title: 'Moussa', part } : null,
     themes: [],
+    imageUrl: null,
   }
 }
 

@@ -19,6 +19,8 @@ export interface DownloadManager {
   remove(episodeId: string): Promise<void>
   /** Adresse de la copie locale, ou null. Synchrone : la lecture ne doit rien attendre. */
   localSource(episodeId: string): string | null
+  /** Adresse à afficher pour une illustration : sa copie locale si elle a été gardée, sinon l'adresse en ligne. */
+  imageSource(url: string): string
 }
 
 export function createDownloadManager(episodes: EpisodeRepository, store: OfflineAudioStore): DownloadManager {
@@ -51,6 +53,8 @@ export function createDownloadManager(episodes: EpisodeRepository, store: Offlin
       try {
         const audio = await episodes.getAudioUrl(episode.id)
         await store.save(episode.id, audio.url, (progress) => set(episode.id, { status: 'downloading', progress }))
+        // L'audio suffit à écouter : une illustration qui ne se télécharge pas ne fait pas échouer l'épisode.
+        if (episode.imageUrl) await store.saveImage(episode.imageUrl).catch(() => undefined)
         set(episode.id, { status: 'downloaded' })
       } catch {
         set(episode.id, { status: 'error' }) // l'interface propose de réessayer
@@ -66,5 +70,6 @@ export function createDownloadManager(episodes: EpisodeRepository, store: Offlin
     localSource(episodeId) {
       return snapshot.get(episodeId)?.status === 'downloaded' ? store.localUrl(episodeId) : null
     },
+    imageSource: (url) => store.localImageUrl(url) ?? url,
   }
 }
