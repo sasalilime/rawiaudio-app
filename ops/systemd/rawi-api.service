@@ -40,13 +40,12 @@ SystemCallFilter=~@privileged
 # Les sauvegardes appartiennent aussi à rawi : l'API n'a pas à les lire.
 InaccessiblePaths=-/var/backups/rawi
 # Réseau : l'API n'écoute que sur son port (un autre site ne peut pas le prendre pendant un redémarrage, et
-# l'API ne peut pas prendre le leur), et n'ouvre aucune connexion sortante : la signature R2 est locale,
-# Postgres passe par le socket. À ouvrir le jour où l'API enverra des e-mails (connexion, tranche 6).
+# l'API ne peut pas prendre le leur). Sorties : seulement les e-mails de connexion vers Resend (ADR-0012),
+# dont les adresses changent, d'où pas de liste d'IP autorisées. La signature R2 reste locale, Postgres
+# passe par le socket.
 SocketBindAllow=tcp:8100
 SocketBindDeny=any
 RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
-IPAddressAllow=localhost
-IPAddressDeny=any
 
 [Install]
 WantedBy=multi-user.target

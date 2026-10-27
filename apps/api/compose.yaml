@@ -43,11 +43,19 @@ services:
       R2_BUCKET: ${R2_BUCKET:?à définir dans apps/api/.env}
       R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID:?à définir dans apps/api/.env}
       R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY:?à définir dans apps/api/.env}
+      AUTH_SECRET: ${AUTH_SECRET:?à définir dans apps/api/.env}
+      APP_URL: ${APP_URL:?à définir dans apps/api/.env}
+      # Dans le réseau de Compose, Mailpit s'appelle mailpit et écoute sur son port à lui, 1025.
+      SMTP_HOST: mailpit
+      SMTP_PORT: "1025"
+      MAIL_FROM: ${MAIL_FROM:?à définir dans apps/api/.env}
     ports:
       - "127.0.0.1:8080:8080"
     depends_on:
       db:
         condition: service_healthy # l'API migre au démarrage : la base doit répondre
+      mailpit:
+        condition: service_started
 
 volumes:
   db-data:

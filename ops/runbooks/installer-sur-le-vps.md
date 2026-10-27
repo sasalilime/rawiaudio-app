@@ -8,7 +8,8 @@ Ensuite, chaque nouvelle version de l'API part avec `make deploy-api`, depuis le
 1. **DNS** de `rawiaudio.com` : deux enregistrements `api`, en **« DNS only »** (nuage gris), sinon Caddy ne peut pas obtenir son certificat :
    - `A` → `94.23.107.23`
    - `AAAA` → `2001:41d0:20a:900::750`
-2. **Token R2 de production** : R2, « Manage API tokens », « Create Account API token » :
+2. **DMARC** de `rawiaudio.com` (e-mails de connexion, ADR-0012) : un enregistrement `TXT` nommé `_dmarc`, valeur `v=DMARC1; p=none; rua=mailto:contact@rawiaudio.com`. Sans lui, Gmail et Yahoo classent plus souvent les e-mails en indésirables. `p=none` ne bloque rien : il demande seulement des rapports, à durcir plus tard.
+3. **Token R2 de production** : R2, « Manage API tokens », « Create Account API token » :
    - permission « Object Read only », limitée au bucket `rawi-audio` ;
    - garder l'« Access Key ID » et le « Secret Access Key » pour l'étape 3. Ils ne s'affichent qu'une fois.
 
@@ -36,6 +37,8 @@ sudoedit /etc/rawi.env
 ```
 - La première commande crée le fichier vide, lisible par root seul. `sudoedit` l'ouvre dans l'éditeur.
 - Y coller le contenu de `ops/rawi.env.example`, puis les deux clés du token de l'étape 1 et l'identifiant du compte Cloudflare dans `R2_ENDPOINT`.
+- `AUTH_SECRET` : coller la sortie de `openssl rand -hex 32`, lancée sur le VPS. Ce secret ne sert qu'ici, il n'est copié nulle part ailleurs.
+- `SMTP_PASSWORD` : une clé API Resend créée pour l'API (Resend, « API Keys », « Create API Key »), en « Sending access », limitée au domaine `rawiaudio.com`. Elle ne s'affiche qu'une fois.
 - Enregistrer, puis vérifier les droits : `sudo ls -l /etc/rawi.env` doit afficher `-rw-------` et `root root`.
 
 ## 4. Depuis le poste : la première mise en ligne
