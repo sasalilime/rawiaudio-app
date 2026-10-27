@@ -5,14 +5,14 @@ import { screen, text, TOUCH_TARGET } from '../ui/theme.ts'
 const SITE = 'https://rawiaudio.com'
 const CONTACT = 'contact@rawiaudio.com'
 
-// ponytail: pas encore de lien « Confidentialité » : la page n'existe pas sur le site. Apple l'exige ici avant
-// la première soumission (ADR-0013).
+// Le lien de confidentialité est exigé par Apple dans l'appli (règle 5.1.1(i), ADR-0013).
 const LINKS = [
   { label: fr.website, url: SITE },
+  { label: fr.privacy, url: `${SITE}/confidentialite` },
   { label: fr.legalNotice, url: `${SITE}/mentions-legales` },
 ]
 
-/** Qui fait Rawi, et où le joindre : le site, les mentions légales, l'adresse de contact. */
+/** Qui fait Rawi, et où le joindre : le site, la confidentialité, les mentions légales, l'adresse de contact. */
 export default function AboutScreen() {
   return (
     <ScrollView contentContainerStyle={screen.content}>

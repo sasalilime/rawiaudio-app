@@ -59,6 +59,7 @@ export const fr = {
   about: 'À propos',
   aboutText: 'Rawi Audio raconte aux familles les histoires du Coran et des Prophètes. Chaque épisode donne ses sources.',
   website: 'Le site de Rawi Audio',
+  privacy: 'Confidentialité',
   legalNotice: 'Mentions légales',
   writeToUs: 'Nous écrire',
   installHint:
