@@ -1,6 +1,6 @@
 # ADR-0013 : Publication sur l'App Store et Google Play
 
-**Statut :** Accepté le 27 octobre 2026 (« oui pour tout »), sauf l'adresse affichée (question 2), encore ouverte
+**Statut :** Accepté le 27 octobre 2026
 **Date :** 27 octobre 2026
 **Décideur :** Salim
 **Prévu par :** ADR-0008 (« la publication sur les stores fera l'objet d'un ADR à part »)
@@ -38,7 +38,7 @@
 
 ## Questions pour Salim
 1. ~~Structure juridique~~ : Salim est déjà entrepreneur individuel (EI), nom commercial Rawi Audio (mentions légales du site). Donc compte **individuel** chez Apple (son nom comme vendeur), et compte **personnel** chez Google, avec les 14 jours de test fermé. Une société avec D-U-N-S en dispenserait, si elle se crée un jour.
-2. **Adresse affichée** (Apple, UE) : domiciliation d'entreprise, ou ton adresse personnelle ? Les mentions légales du site ne donnent que la ville. Il faudra une adresse complète pour Apple.
+2. ~~Adresse affichée~~ : la même que dans les mentions légales du site (27 octobre 2026). Attention : le site ne donne que la ville (Roubaix), alors qu'Apple demande une adresse complète (rue, ou boîte postale avec justificatif). La loi demande aussi l'adresse complète d'un éditeur professionnel dans les mentions légales. À compléter aux deux endroits en même temps, avec la même adresse.
 3. ~~Sortir avant l'abonnement~~ : oui, l'app gratuite sort dès qu'elle est prête ; le cadenas arrive avec la tranche 7.
 4. ~~Expo~~ : oui, un compte Expo et EAS Build (plan gratuit).
 5. ~~Testeurs~~ : oui, on écrit aux inscrits de la liste d'attente pour le test fermé.
