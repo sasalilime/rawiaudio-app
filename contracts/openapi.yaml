@@ -3,7 +3,7 @@
 openapi: 3.1.0
 info:
   title: API Rawi Audio
-  version: 0.1.0
+  version: 0.2.0
 servers:
   - url: https://api.rawiaudio.com
   - url: http://localhost:8080
@@ -104,7 +104,160 @@ paths:
                 error: not_found
         "500":
           $ref: "#/components/responses/Internal"
+  # Connexion (ADR-0012) : un e-mail avec un code de 6 chiffres et un lien. S'inscrire = se connecter.
+  # Toute requête qui modifie quelque chose passe par http.CrossOriginProtection : 403 si elle vient d'un autre site.
+  /auth/login:
+    post:
+      operationId: requestLogin
+      summary: Envoie l'e-mail de connexion (code et lien)
+      description: >
+        Même réponse pour toute adresse, connue ou non : le compte est créé à la première vérification réussie.
+        Une nouvelle demande annule la précédente pour cette adresse. Le code et le lien valent 10 minutes.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "202":
+          description: Demande acceptée ; l'e-mail part en arrière-plan.
+        "400":
+          description: Corps invalide (`invalid_request`) ou adresse e-mail invalide (`invalid_email`).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: invalid_email
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "503":
+          description: Plafond quotidien d'envoi d'e-mails atteint ; réessayer plus tard.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: unavailable
+        "500":
+          $ref: "#/components/responses/Internal"
+  /auth/code:
+    post:
+      operationId: verifyCode
+      summary: Vérifie le code reçu par e-mail et ouvre une session
+      description: >
+        Crée le compte s'il n'existe pas. client "web" : session dans le cookie (Set-Cookie), sans jeton dans la réponse.
+        client "app" : jeton dans la réponse, à envoyer ensuite dans Authorization. 5 essais par demande.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CodeRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/SessionOpened"
+        "400":
+          $ref: "#/components/responses/InvalidCode"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/Internal"
+  /auth/link:
+    post:
+      operationId: verifyLink
+      summary: Vérifie le jeton du lien reçu par e-mail et ouvre une session
+      description: >
+        Le lien ouvre https://app.rawiaudio.com/connexion#jeton=… ; c'est le bouton « Me connecter » de cette page
+        qui appelle cette route, jamais l'ouverture du lien (les antivirus des messageries ouvrent les liens).
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LinkRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/SessionOpened"
+        "400":
+          $ref: "#/components/responses/InvalidCode"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "500":
+          $ref: "#/components/responses/Internal"
+  /auth/logout:
+    post:
+      operationId: logout
+      summary: Ferme la session de cet appareil
+      security:
+        - sessionCookie: []
+        - bearerToken: []
+      responses:
+        "204":
+          description: Session fermée ; pour la PWA, le cookie est effacé.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/Internal"
+  /account:
+    get:
+      operationId: getAccount
+      summary: Le compte de la session
+      security:
+        - sessionCookie: []
+        - bearerToken: []
+      responses:
+        "200":
+          description: Le compte.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/Internal"
+    delete:
+      operationId: deleteAccount
+      summary: Supprime le compte et toutes ses sessions
+      description: Exigé par Apple (règle 5.1.1(v)) et par le RGPD (droit à l'effacement). Irréversible.
+      security:
+        - sessionCookie: []
+        - bearerToken: []
+      responses:
+        "204":
+          description: Compte supprimé ; pour la PWA, le cookie est effacé.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/Internal"
 components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: __Host-rawi_session
+      description: >
+        PWA. Posé par api.rawiaudio.com (HttpOnly, Secure, SameSite=Lax, 180 jours prolongés à l'usage).
+        La PWA appelle l'API avec credentials "include" ; le CORS n'accepte les cookies que de https://app.rawiaudio.com.
+    bearerToken:
+      type: http
+      scheme: bearer
+      description: App mobile. Jeton renvoyé par /auth/code ou /auth/link avec client "app", gardé dans le trousseau du téléphone.
   parameters:
     EpisodeId:
       name: id
@@ -131,6 +284,59 @@ components:
             $ref: "#/components/schemas/Error"
           example:
             error: internal
+    Unauthorized:
+      description: Pas de session, ou session expirée ou fermée.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: unauthorized
+    Forbidden:
+      description: Requête venue d'un autre site (protection CSRF).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: forbidden
+    TooManyRequests:
+      description: Trop de demandes pour cette adresse e-mail ou cette IP.
+      headers:
+        Retry-After:
+          description: Secondes à attendre avant de réessayer.
+          schema:
+            type: integer
+            minimum: 1
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: too_many_requests
+    InvalidCode:
+      description: >
+        Corps invalide (`invalid_request`), ou code ou jeton refusé (`invalid_code`) : toujours la même réponse,
+        que le code soit faux, expiré, déjà utilisé, à court d'essais ou sans demande en cours.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: invalid_code
+    SessionOpened:
+      description: >
+        Session ouverte. client "web" : cookie posé par Set-Cookie, pas de jeton. client "app" : jeton dans la réponse.
+      headers:
+        Set-Cookie:
+          description: Seulement pour client "web".
+          schema:
+            type: string
+            example: __Host-rawi_session=…; Path=/; Max-Age=15552000; HttpOnly; Secure; SameSite=Lax
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/SessionOpened"
   schemas:
     Error:
       type: object
@@ -139,7 +345,67 @@ components:
       properties:
         error:
           type: string
-          enum: [invalid_request, not_found, internal]
+          enum:
+            [invalid_request, invalid_email, invalid_code, unauthorized, forbidden, not_found, too_many_requests, unavailable, internal]
+    Client:
+      type: string
+      enum: [web, app]
+      description: web = la PWA (session en cookie), app = l'app mobile (jeton dans la réponse).
+    Email:
+      type: string
+      format: email
+      maxLength: 254
+      description: Espaces retirés et mise en minuscules par l'API avant tout usage.
+      example: parent@example.com
+    LoginRequest:
+      type: object
+      additionalProperties: false
+      required: [email]
+      properties:
+        email:
+          $ref: "#/components/schemas/Email"
+    CodeRequest:
+      type: object
+      additionalProperties: false
+      required: [email, code, client]
+      properties:
+        email:
+          $ref: "#/components/schemas/Email"
+        code:
+          type: string
+          pattern: "^[0-9]{6}$"
+          example: "042917"
+        client:
+          $ref: "#/components/schemas/Client"
+    LinkRequest:
+      type: object
+      additionalProperties: false
+      required: [token, client]
+      properties:
+        token:
+          type: string
+          description: Le jeton du lien (32 octets aléatoires en base64url, sans remplissage).
+          pattern: "^[A-Za-z0-9_-]{43}$"
+        client:
+          $ref: "#/components/schemas/Client"
+    Account:
+      type: object
+      additionalProperties: false
+      required: [email]
+      properties:
+        email:
+          $ref: "#/components/schemas/Email"
+    SessionOpened:
+      type: object
+      additionalProperties: false
+      required: [account]
+      properties:
+        account:
+          $ref: "#/components/schemas/Account"
+        token:
+          type: string
+          description: Seulement pour client "app" ; à envoyer dans Authorization (Bearer). Jamais renvoyé à la PWA.
+          pattern: "^[A-Za-z0-9_-]{43}$"
     Lang:
       type: string
       enum: [fr, ar, en]
@@ -215,7 +481,7 @@ components:
           anyOf:
             - type: string
               format: uri
-              example: https://media.rawiaudio.com/fr/001-les-gens-de-la-caverne/image-16x9.webp
+              example: https://media.rawiaudio.com/fr/001-les-gens-de-la-caverne/image-16x9-3f9a1c.webp
             - type: "null"
     Episode:
       allOf:

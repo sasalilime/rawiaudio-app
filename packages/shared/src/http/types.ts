@@ -54,4 +54,13 @@ export interface AudioUrl {
   expiresAt: string
 }
 
-export type ErrorCode = 'invalid_request' | 'not_found' | 'internal'
+export type ErrorCode =
+  | 'invalid_request'
+  | 'invalid_email'
+  | 'invalid_code'
+  | 'unauthorized'
+  | 'forbidden'
+  | 'not_found'
+  | 'too_many_requests'
+  | 'unavailable'
+  | 'internal'
