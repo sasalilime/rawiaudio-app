@@ -8,6 +8,7 @@ import { EpisodeRow, rowStyles } from '../ui/components/EpisodeRow.tsx'
 import { ErrorNotice } from '../ui/components/ErrorNotice.tsx'
 import { RandomButton } from '../ui/components/RandomButton.tsx'
 import { SeriesRow } from '../ui/components/SeriesRow.tsx'
+import { accountHref } from '../ui/routes.ts'
 import { colors, fonts, screen, text } from '../ui/theme.ts'
 
 /** Le catalogue : l'histoire au hasard, le dernier épisode, puis les épisodes et séries rangés par thème. */
@@ -65,9 +66,14 @@ export default function CatalogScreen() {
         </>
       )}
 
-      <Link href="/about" style={[text.link, styles.about]}>
-        {fr.about}
-      </Link>
+      <View style={styles.footer}>
+        <Link href={accountHref} style={[text.link, styles.footerLink]}>
+          {fr.account}
+        </Link>
+        <Link href="/about" style={[text.link, styles.footerLink]}>
+          {fr.about}
+        </Link>
+      </View>
     </ScrollView>
   )
 }
@@ -79,6 +85,8 @@ const styles = StyleSheet.create({
   tagline: { color: colors.ambre, fontFamily: fonts.titre, fontSize: 21, lineHeight: 32, textAlign: 'center', maxWidth: 320 },
   loading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, paddingVertical: 24 },
   latestTitle: { color: colors.ambre },
+  // flexWrap : avec le grand texte du téléphone, les liens passent l'un sous l'autre.
+  footer: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', columnGap: 32, marginTop: 32 },
   // 26 de hauteur de ligne + 2 × 11 : la cible de 48 points.
-  about: { alignSelf: 'center', marginTop: 32, paddingVertical: 11 },
+  footerLink: { paddingVertical: 11 },
 })

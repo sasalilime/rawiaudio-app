@@ -40,6 +40,7 @@ export default function RootLayout() {
         >
           {/* Le catalogue a son en-tête à lui, comme l'accueil du site. Son titre sert au bouton retour d'iOS. */}
           <Stack.Screen name="index" options={{ title: fr.appName, headerShown: false }} />
+          <Stack.Screen name="account" options={{ title: fr.account }} />
         </Stack>
         <MiniPlayer />
       </View>

@@ -23,7 +23,8 @@
       "expo-router",
       "expo-sqlite",
       ["expo-splash-screen", { "image": "./assets/images/adaptive-icon.png", "imageWidth": 200, "backgroundColor": "#1F2A44" }],
-      ["expo-audio", { "enableBackgroundPlayback": true, "microphonePermission": false, "recordAudioAndroid": false }]
+      ["expo-audio", { "enableBackgroundPlayback": true, "microphonePermission": false, "recordAudioAndroid": false }],
+      ["expo-secure-store", { "faceIDPermission": false }]
     ]
   }
 }

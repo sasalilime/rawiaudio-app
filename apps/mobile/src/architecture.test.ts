@@ -16,7 +16,7 @@ const UI_PACKAGES = [CORE, SHARED_UI, 'react', 'react-native', 'react-native-saf
 
 // Pour chaque couche : les dossiers de src/ qu'elle peut importer, et les paquets npm (préfixes) autorisés.
 const RULES: Record<string, { folders: string[]; packages: string[] }> = {
-  infra: { folders: ['infra'], packages: [CORE, 'expo-audio', 'expo-file-system'] },
+  infra: { folders: ['infra'], packages: [CORE, 'expo-audio', 'expo-file-system', 'expo-secure-store'] },
   ui: { folders: ['ui'], packages: UI_PACKAGES },
   // Les écrans d'expo-router. main.ts : pour _layout.tsx seulement, qui fournit les cas d'usage à tous les écrans.
   app: { folders: ['app', 'ui', 'main.ts'], packages: [...UI_PACKAGES, 'expo-status-bar', 'expo-font'] },
