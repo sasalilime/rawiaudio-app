@@ -108,6 +108,25 @@ sessions       (token_hash PRIMARY KEY, account_id → accounts ON DELETE CASCAD
 - La politique de confidentialité du site doit mentionner le compte (une adresse e-mail, rien d'autre) et sa suppression.
 - Nouvelles variables : `AUTH_SECRET`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `MAIL_FROM`, `APP_URL`.
 
+## Relecture de sécurité (27 octobre 2026)
+Relecture par un agent neuf, chaque constat reproduit par un test. Corrigé :
+- **Connexion forcée par le lien** : un attaquant envoyait à sa victime le lien de son propre compte ; un clic, et l'historique de la victime partait chez lui. Le lien ne marche plus que dans le navigateur qui a demandé le code : `/auth/login` (client `web`) pose un cookie de preuve `__Host-rawi_login`, dont l'empreinte est dans `login_requests.browser_hash` (migration 0008), et `/auth/link` l'exige. L'app mobile n'a que le code : son e-mail n'a plus de lien.
+- **Force brute étalée** : 3 demandes par heure laissaient tenter 360 codes par jour sur une adresse. Plafond ajouté : 8 demandes par jour et par adresse.
+- **Course comptage / enregistrement** : 30 demandes simultanées passaient toutes. Comptage et enregistrement sous un verrou (une seule instance de l'API).
+- **IPv6** : une machine change d'adresse dans son bloc /64 et contournait la limite par IP, en remplissant la mémoire. Une adresse IPv6 compte désormais pour son /64.
+- **Jeton d'app demandé par un navigateur** : un script injecté dans la PWA pouvait obtenir une session lisible. `client=app` avec un en-tête `Origin` est refusé.
+
+Laissé, à trancher par Salim :
+- **Le code dans le sujet** : lisible dans l'aperçu des notifications, écran verrouillé. Le retirer oblige à ouvrir l'e-mail ; l'iPhone remplit toujours le code depuis le texte.
+- **Historique local à la déconnexion** : il reste sur l'appareil, et le compte suivant connecté sur ce même appareil le reçoit.
+
+À vérifier en production :
+- `api.rawiaudio.com` reste en « DNS only » : derrière le proxy de Cloudflare, l'IP lue serait celle de Cloudflare, et les limites seraient partagées par tout le monde ;
+- journaux d'accès de Caddy : jamais `log_credentials` (les cookies et `Authorization` y seraient en clair) ;
+- `SMTP_PORT=465` et `SMTP_USERNAME` rempli : sans identifiant, un autre port accepterait d'envoyer sans chiffrement ;
+- DMARC : passer de `p=none` à `p=quarantine` quand les rapports montrent que tous les e-mails légitimes passent. Avec `p=none`, un faux e-mail « connexion@rawiaudio.com » reste possible ;
+- aucun script tiers (Web Analytics, Zaraz) sur `app.rawiaudio.com` : il lirait le jeton du lien dans l'adresse.
+
 ## Ordre proposé (une étape, un « go »)
 1. Réponses aux questions, ADR accepté.
 2. Contrat OpenAPI des routes ci-dessus.

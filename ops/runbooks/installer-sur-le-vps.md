@@ -8,7 +8,7 @@ Ensuite, chaque nouvelle version de l'API part avec `make deploy-api`, depuis le
 1. **DNS** de `rawiaudio.com` : deux enregistrements `api`, en **« DNS only »** (nuage gris), sinon Caddy ne peut pas obtenir son certificat :
    - `A` → `94.23.107.23`
    - `AAAA` → `2001:41d0:20a:900::750`
-2. **DMARC** de `rawiaudio.com` (e-mails de connexion, ADR-0012) : un enregistrement `TXT` nommé `_dmarc`, valeur `v=DMARC1; p=none; rua=mailto:contact@rawiaudio.com`. Sans lui, Gmail et Yahoo classent plus souvent les e-mails en indésirables. `p=none` ne bloque rien : il demande seulement des rapports, à durcir plus tard.
+2. **DMARC** de `rawiaudio.com` (e-mails de connexion, ADR-0012) : un enregistrement `TXT` nommé `_dmarc`, valeur `v=DMARC1; p=none; rua=mailto:contact@rawiaudio.com`. Sans lui, Gmail et Yahoo classent plus souvent les e-mails en indésirables. `p=none` ne bloque rien : il demande seulement des rapports. Quand les rapports montrent que tous les e-mails légitimes passent (Resend, le site), passer à `p=quarantine` : sinon un faux e-mail « connexion@rawiaudio.com » reste possible (ADR-0012, relecture de sécurité).
 3. **Token R2 de production** : R2, « Manage API tokens », « Create Account API token » :
    - permission « Object Read only », limitée au bucket `rawi-audio` ;
    - garder l'« Access Key ID » et le « Secret Access Key » pour l'étape 3. Ils ne s'affichent qu'une fois.
