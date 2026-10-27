@@ -40,9 +40,8 @@
   On refait le point au passage aux versions finales, le 30 octobre.
 - Téléchargements dans le cache de l'appli : expo-file-system ne sait pas exclure un fichier de la sauvegarde iCloud, qu'Apple refuse pour du contenu re-téléchargeable. Le système peut vider ce cache quand le téléphone est presque plein, comme Safari pour la PWA.
 - Apparence : celle du site et de la PWA. Polices Lalezar et Literata en TTF (`expo-font`), tirées des woff2 du site ; icône d'après le kit de marque (casque sans le mot, sur nuit) ; l'accueil reprend l'en-tête du site (symbole, nom, accroche).
-- Pas encore traité dans l'app mobile :
-  - l'écran de démarrage aux couleurs de Rawi : il demande `expo-splash-screen` (module officiel, à installer) ;
-  - les illustrations des épisodes, comme sur le site : il faut d'abord les servir par l'API ;
-  - l'image de l'écran verrouillé, prise sur la PWA une fois en ligne.
+- Traité depuis (27 octobre 2026) :
+  - l'écran de démarrage aux couleurs de Rawi : `expo-splash-screen` (casque de l'icône sur fond nuit), affiché jusqu'au chargement des polices ;
+  - les illustrations des épisodes, servies par l'API, et sur l'écran verrouillé (ADR-0009). Un épisode sans illustration y montre l'icône de la PWA, une fois celle-ci en ligne.
 - L'app mobile parle à la même API. Sans l'API en ligne, l'essai sur téléphone demande le même Wi-Fi que le poste de dev.
 - La publication sur l'App Store et sur Google Play (comptes, fiches, règles des applis pour enfants) fera l'objet d'un ADR à part.
