@@ -61,8 +61,8 @@ func (l *ipLimiter) middleware(next http.Handler) http.Handler {
 	})
 }
 
-// clientIP : l'adresse du client. Sur le VPS, l'API n'écoute que sur 127.0.0.1, derrière Caddy (ADR-0011) :
-// une connexion venue de la machine est donc Caddy, et l'adresse du client est la dernière de
+// clientIP : l'adresse du client, la clé des limites. Sur le VPS, l'API n'écoute que sur 127.0.0.1, derrière
+// Caddy (ADR-0011) : une connexion venue de la machine est donc Caddy, et l'adresse du client est la dernière de
 // X-Forwarded-For, celle que Caddy ajoute. D'ailleurs (dev, Docker), cet en-tête que n'importe qui peut
 // écrire est ignoré.
 func clientIP(r *http.Request) string {
@@ -71,15 +71,26 @@ func clientIP(r *http.Request) string {
 		host = r.RemoteAddr
 	}
 	if ip := net.ParseIP(host); ip == nil || !ip.IsLoopback() {
-		return host
+		return limitKey(host)
 	}
 	values := r.Header.Values("X-Forwarded-For")
 	if len(values) == 0 {
-		return host
+		return limitKey(host)
 	}
 	parts := strings.Split(values[len(values)-1], ",")
 	if last := strings.TrimSpace(parts[len(parts)-1]); last != "" {
-		return last
+		return limitKey(last)
 	}
-	return host
+	return limitKey(host)
+}
+
+// limitKey : une adresse IPv6 compte pour son bloc /64. Une seule machine en a souvent un entier (des milliards
+// d'adresses) : limitée adresse par adresse, elle contournait la limite et remplissait la mémoire de l'API
+// (relecture de sécurité du 27/10/2026).
+func limitKey(addr string) string {
+	ip := net.ParseIP(addr)
+	if ip == nil || ip.To4() != nil {
+		return addr
+	}
+	return ip.Mask(net.CIDRMask(64, 128)).String() + "/64"
 }

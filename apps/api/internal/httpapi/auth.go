@@ -18,9 +18,9 @@ import (
 
 // authService est implémenté par service.Auth. En test, un faux le remplace.
 type authService interface {
-	RequestLogin(ctx context.Context, email string) error
+	RequestLogin(ctx context.Context, email string, forBrowser bool) (string, error)
 	VerifyCode(ctx context.Context, email, code string) (service.Account, string, error)
-	VerifyLink(ctx context.Context, token string) (service.Account, string, error)
+	VerifyLink(ctx context.Context, token, browserProof string) (service.Account, string, error)
 	Authenticate(ctx context.Context, token string) (service.Account, bool, error)
 	Logout(ctx context.Context, token string) error
 	DeleteAccount(ctx context.Context, accountID int64) error
@@ -29,6 +29,10 @@ type authService interface {
 // sessionCookie : le préfixe __Host- oblige le navigateur à n'accepter ce cookie que Secure, sur Path=/ et sans
 // Domain. Aucun autre sous-domaine de rawiaudio.com ne peut donc le poser ni le remplacer.
 const sessionCookie = "__Host-rawi_session"
+
+// loginCookie : la preuve remise au navigateur qui demande un code. Le lien de l'e-mail n'ouvre une session que
+// dans ce navigateur (relecture de sécurité du 27/10/2026) : un lien envoyé par quelqu'un d'autre y est refusé.
+const loginCookie = "__Host-rawi_login"
 
 // maxBodyBytes : les corps des routes de connexion font quelques dizaines d'octets.
 const maxBodyBytes = 4 << 10
@@ -42,7 +46,8 @@ var (
 // Requêtes : elles suivent les schémas de contracts/openapi.yaml, et se valident avant tout appel au service.
 
 type loginRequest struct {
-	Email string `json:"email"`
+	Email  string `json:"email"`
+	Client string `json:"client"`
 }
 
 // Validate ne vérifie que la présence : la forme de l'adresse se juge dans le service (réponse invalid_email).
@@ -50,7 +55,7 @@ func (req loginRequest) Validate() error {
 	if req.Email == "" {
 		return errors.New("email obligatoire")
 	}
-	return nil
+	return validateClient(req.Client)
 }
 
 type codeRequest struct {
@@ -76,6 +81,13 @@ func (req linkRequest) Validate() error {
 		return errors.New("jeton mal formé")
 	}
 	return validateClient(req.Client)
+}
+
+// appFromBrowser : un navigateur qui se dit « app » pour recevoir le jeton dans la réponse. Un script injecté dans
+// la PWA obtiendrait ainsi une session lisible, utilisable de partout. L'app mobile n'envoie jamais d'en-tête
+// Origin ; un navigateur, toujours sur un POST.
+func appFromBrowser(r *http.Request, client string) bool {
+	return client == "app" && r.Header.Get("Origin") != ""
 }
 
 // validateClient : web = la PWA (session en cookie), app = l'app mobile (jeton dans la réponse).
@@ -116,9 +128,12 @@ func requestLogin(auth authService) http.HandlerFunc {
 			writeError(w, r, http.StatusBadRequest, "invalid_request")
 			return
 		}
-		err := auth.RequestLogin(r.Context(), req.Email)
+		browserProof, err := auth.RequestLogin(r.Context(), req.Email, req.Client == "web")
 		switch {
 		case err == nil:
+			if browserProof != "" {
+				setCookie(w, loginCookie, browserProof, service.LoginRequestTTL)
+			}
 			w.WriteHeader(http.StatusAccepted)
 		case errors.Is(err, service.ErrInvalidEmail):
 			writeError(w, r, http.StatusBadRequest, "invalid_email")
@@ -137,7 +152,7 @@ func requestLogin(auth authService) http.HandlerFunc {
 func verifyCode(auth authService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req codeRequest
-		if err := decodeJSON(w, r, &req, maxBodyBytes); err != nil || req.Validate() != nil {
+		if err := decodeJSON(w, r, &req, maxBodyBytes); err != nil || req.Validate() != nil || appFromBrowser(r, req.Client) {
 			writeError(w, r, http.StatusBadRequest, "invalid_request")
 			return
 		}
@@ -149,11 +164,15 @@ func verifyCode(auth authService) http.HandlerFunc {
 func verifyLink(auth authService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req linkRequest
-		if err := decodeJSON(w, r, &req, maxBodyBytes); err != nil || req.Validate() != nil {
+		if err := decodeJSON(w, r, &req, maxBodyBytes); err != nil || req.Validate() != nil || appFromBrowser(r, req.Client) {
 			writeError(w, r, http.StatusBadRequest, "invalid_request")
 			return
 		}
-		account, token, err := auth.VerifyLink(r.Context(), req.Token)
+		proof := ""
+		if cookie, err := r.Cookie(loginCookie); err == nil {
+			proof = cookie.Value
+		}
+		account, token, err := auth.VerifyLink(r.Context(), req.Token, proof)
 		writeSession(w, r, req.Client, account, token, err)
 	}
 }
@@ -175,6 +194,7 @@ func writeSession(w http.ResponseWriter, r *http.Request, client string, account
 		body.Token = token
 	} else {
 		setSessionCookie(w, token)
+		clearCookie(w, loginCookie) // la preuve a servi : la demande est fermée
 	}
 	writeJSON(w, r, http.StatusOK, body)
 }
@@ -280,20 +300,25 @@ func sessionToken(r *http.Request) (token string, fromCookie, ok bool) {
 }
 
 func setSessionCookie(w http.ResponseWriter, token string) {
-	http.SetCookie(w, &http.Cookie{
-		Name:     sessionCookie,
-		Value:    token,
-		Path:     "/",
-		MaxAge:   int(service.SessionTTL / time.Second),
-		HttpOnly: true, // le JavaScript de la page ne le voit pas : une faille XSS ne peut pas le voler
-		Secure:   true,
-		SameSite: http.SameSiteLaxMode,
-	})
+	setCookie(w, sessionCookie, token, service.SessionTTL)
 }
 
 func clearSessionCookie(w http.ResponseWriter) {
+	clearCookie(w, sessionCookie)
+}
+
+// setCookie pose un cookie de l'API : HttpOnly (le JavaScript de la page ne le voit pas, une faille XSS ne peut
+// pas le voler), Secure, SameSite=Lax, sur tout le domaine de l'API.
+func setCookie(w http.ResponseWriter, name, value string, maxAge time.Duration) {
 	http.SetCookie(w, &http.Cookie{
-		Name: sessionCookie, Value: "", Path: "/", MaxAge: -1, HttpOnly: true, Secure: true, SameSite: http.SameSiteLaxMode,
+		Name: name, Value: value, Path: "/", MaxAge: int(maxAge / time.Second),
+		HttpOnly: true, Secure: true, SameSite: http.SameSiteLaxMode,
+	})
+}
+
+func clearCookie(w http.ResponseWriter, name string) {
+	http.SetCookie(w, &http.Cookie{
+		Name: name, Value: "", Path: "/", MaxAge: -1, HttpOnly: true, Secure: true, SameSite: http.SameSiteLaxMode,
 	})
 }
 

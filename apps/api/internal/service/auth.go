@@ -11,6 +11,7 @@ import (
 	"math/big"
 	"net/mail"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -20,7 +21,10 @@ const (
 	// MaxRequestsPerEmail demandes par adresse et par heure : avec 5 essais chacune, au plus 15 codes tentés
 	// par heure sur un million possibles.
 	MaxRequestsPerEmail = 3
-	SessionTTL          = 180 * 24 * time.Hour // prolongée à l'usage
+	// MaxRequestsPerEmailPerDay plafonne la journée : sans lui, 3 demandes par heure, 24 heures sur 24, laissaient
+	// tenter 360 codes par jour sur une même adresse. Avec 8, au plus 40 codes par jour.
+	MaxRequestsPerEmailPerDay = 8
+	SessionTTL                = 180 * 24 * time.Hour // prolongée à l'usage
 	// sessionRefreshAfter : last_seen_at et l'expiration ne s'écrivent qu'une fois par jour, pas à chaque requête.
 	sessionRefreshAfter = 24 * time.Hour
 	// mailSendTimeout reste sous le WriteTimeout du serveur HTTP (15 s) : la réponse part toujours.
@@ -48,14 +52,18 @@ type NewLoginRequest struct {
 	Email     string
 	CodeHMAC  []byte
 	TokenHash []byte
-	ExpiresAt time.Time
+	// BrowserHash : empreinte de la preuve remise au navigateur qui a fait la demande (cookie) ; nil pour l'app
+	// mobile, dont l'e-mail n'a pas de lien.
+	BrowserHash []byte
+	ExpiresAt   time.Time
 }
 
 // PendingLogin est une demande de connexion encore ouverte, retrouvée par son adresse ou par son jeton.
 type PendingLogin struct {
-	ID       int64
-	Email    string
-	CodeHMAC []byte
+	ID          int64
+	Email       string
+	CodeHMAC    []byte
+	BrowserHash []byte // nil : pas de lien pour cette demande
 }
 
 // NewSession est une session à créer ; le jeton reste chez le client, la base n'en garde que l'empreinte.
@@ -103,6 +111,10 @@ type MailSender interface {
 
 // Auth porte les règles de la connexion par e-mail (ADR-0012).
 type Auth struct {
+	// requestMu fait passer les demandes de connexion une par une, du comptage à l'enregistrement : sans lui,
+	// 30 demandes simultanées pour une adresse passaient toutes la limite de 3 (relecture du 27/10/2026).
+	// ponytail: verrou en mémoire, l'API n'a qu'une instance ; pg_advisory_xact_lock si elle en a un jour plusieurs.
+	requestMu    sync.Mutex
 	store        AuthStore
 	mail         MailSender
 	secret       []byte // AUTH_SECRET, clé du HMAC des codes : ne jamais la logger
@@ -132,21 +144,60 @@ func NormalizeEmail(raw string) (string, error) {
 // RequestLogin envoie l'e-mail de connexion. S'inscrire = se connecter : la réponse est la même pour une
 // adresse connue ou non, et le compte n'est créé qu'à la première vérification réussie.
 //
-// ponytail: compter puis insérer n'est pas atomique ; deux demandes simultanées peuvent dépasser la limite
-// d'une unité. Sans gravité ici ; un verrou par adresse (pg_advisory_xact_lock) si ça devenait un problème.
-func (a *Auth) RequestLogin(ctx context.Context, rawEmail string) error {
+// forBrowser : la demande vient de la PWA. L'e-mail contient alors aussi un lien, qui n'ouvre une session que
+// dans ce navigateur : browserProof est à lui remettre dans un cookie, et VerifyLink la redemande.
+// Pour l'app mobile, ni lien ni preuve : browserProof est vide.
+func (a *Auth) RequestLogin(ctx context.Context, rawEmail string, forBrowser bool) (browserProof string, err error) {
 	email, err := NormalizeEmail(rawEmail)
 	if err != nil {
-		return err
+		return "", err
 	}
+	code, err := newCode()
+	if err != nil {
+		return "", err
+	}
+	token := newToken()
+	req := NewLoginRequest{Email: email, CodeHMAC: a.codeHMAC(email, code), TokenHash: hashToken(token)}
+	if forBrowser {
+		browserProof = newToken()
+		req.BrowserHash = hashToken(browserProof)
+	}
+	if err := a.recordRequest(ctx, req); err != nil {
+		return "", err
+	}
+
+	link := ""
+	if forBrowser {
+		// Le jeton dans le fragment (#) : il n'arrive jamais dans les journaux d'un serveur ni dans un Referer.
+		link = a.appURL + "/connexion#jeton=" + token
+	}
+	subject, text := LoginMail(code, link, LoginRequestTTL)
+	sendCtx, cancel := context.WithTimeout(ctx, mailSendTimeout)
+	defer cancel()
+	if err := a.mail.Send(sendCtx, email, subject, text); err != nil {
+		return "", fmt.Errorf("envoi de l'e-mail de connexion: %w", err)
+	}
+	return browserProof, nil
+}
+
+// recordRequest vérifie les limites puis enregistre la demande, sous requestMu : compter puis insérer doivent
+// former un tout, sinon des demandes simultanées passent toutes. L'envoi de l'e-mail reste hors du verrou.
+func (a *Auth) recordRequest(ctx context.Context, req NewLoginRequest) error {
+	a.requestMu.Lock()
+	defer a.requestMu.Unlock()
 	now := a.now()
 
-	recent, err := a.store.CountLoginRequests(ctx, email, now.Add(-time.Hour))
-	if err != nil {
-		return fmt.Errorf("demandes récentes de l'adresse: %w", err)
-	}
-	if recent >= MaxRequestsPerEmail {
-		return ErrTooManyRequests
+	for _, limit := range []struct {
+		since time.Duration
+		max   int
+	}{{time.Hour, MaxRequestsPerEmail}, {24 * time.Hour, MaxRequestsPerEmailPerDay}} {
+		n, err := a.store.CountLoginRequests(ctx, req.Email, now.Add(-limit.since))
+		if err != nil {
+			return fmt.Errorf("demandes récentes de l'adresse: %w", err)
+		}
+		if n >= limit.max {
+			return ErrTooManyRequests
+		}
 	}
 	today, err := a.store.CountAllLoginRequests(ctx, now.Add(-24*time.Hour))
 	if err != nil {
@@ -156,27 +207,9 @@ func (a *Auth) RequestLogin(ctx context.Context, rawEmail string) error {
 		return ErrMailQuota
 	}
 
-	code, err := newCode()
-	if err != nil {
-		return err
-	}
-	token := newToken()
-	err = a.store.CreateLoginRequest(ctx, NewLoginRequest{
-		Email:     email,
-		CodeHMAC:  a.codeHMAC(email, code),
-		TokenHash: hashToken(token),
-		ExpiresAt: now.Add(LoginRequestTTL),
-	}, now)
-	if err != nil {
+	req.ExpiresAt = now.Add(LoginRequestTTL)
+	if err := a.store.CreateLoginRequest(ctx, req, now); err != nil {
 		return fmt.Errorf("enregistrement de la demande: %w", err)
-	}
-
-	// Le jeton dans le fragment (#) : il n'arrive jamais dans les journaux d'un serveur ni dans un Referer.
-	subject, text := LoginMail(code, a.appURL+"/connexion#jeton="+token, LoginRequestTTL)
-	sendCtx, cancel := context.WithTimeout(ctx, mailSendTimeout)
-	defer cancel()
-	if err := a.mail.Send(sendCtx, email, subject, text); err != nil {
-		return fmt.Errorf("envoi de l'e-mail de connexion: %w", err)
 	}
 	return nil
 }
@@ -202,12 +235,17 @@ func (a *Auth) VerifyCode(ctx context.Context, rawEmail, code string) (Account, 
 }
 
 // VerifyLink vérifie le jeton du lien reçu par e-mail ; mêmes résultats que VerifyCode.
-// Pas de compte d'essais : un jeton de 32 octets aléatoires ne se devine pas.
-func (a *Auth) VerifyLink(ctx context.Context, token string) (Account, string, error) {
+// browserProof : la preuve du cookie posé par RequestLogin. Le lien ne marche que dans le navigateur qui a
+// demandé le code : ouvert ailleurs (lien envoyé par un attaquant, autre navigateur), il est refusé, et le code
+// reste le moyen de se connecter. Pas de compte d'essais : 32 octets aléatoires ne se devinent pas.
+func (a *Auth) VerifyLink(ctx context.Context, token, browserProof string) (Account, string, error) {
 	now := a.now()
 	pending, err := a.store.PendingByToken(ctx, hashToken(token), now)
 	if err != nil {
 		return Account{}, "", err
+	}
+	if pending.BrowserHash == nil || !hmac.Equal(pending.BrowserHash, hashToken(browserProof)) {
+		return Account{}, "", ErrInvalidCode
 	}
 	return a.openSession(ctx, pending, now)
 }

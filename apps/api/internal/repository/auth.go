@@ -50,8 +50,8 @@ func (a *Auth) CreateLoginRequest(ctx context.Context, req service.NewLoginReque
 			return err
 		}
 		_, err := tx.Exec(ctx, `
-			INSERT INTO login_requests (email, code_hmac, token_hash, expires_at, created_at)
-			VALUES ($1, $2, $3, $4, $5)`, req.Email, req.CodeHMAC, req.TokenHash, req.ExpiresAt, now)
+			INSERT INTO login_requests (email, code_hmac, token_hash, browser_hash, expires_at, created_at)
+			VALUES ($1, $2, $3, $4, $5, $6)`, req.Email, req.CodeHMAC, req.TokenHash, req.BrowserHash, req.ExpiresAt, now)
 		return err
 	})
 	if err != nil {
@@ -87,8 +87,8 @@ func (a *Auth) AttemptCode(ctx context.Context, email string, now time.Time) (se
 func (a *Auth) PendingByToken(ctx context.Context, tokenHash []byte, now time.Time) (service.PendingLogin, error) {
 	var p service.PendingLogin
 	err := a.pool.QueryRow(ctx, `
-		SELECT id, email, code_hmac FROM login_requests
-		WHERE token_hash = $1 AND closed_at IS NULL AND expires_at > $2`, tokenHash, now).Scan(&p.ID, &p.Email, &p.CodeHMAC)
+		SELECT id, email, code_hmac, browser_hash FROM login_requests
+		WHERE token_hash = $1 AND closed_at IS NULL AND expires_at > $2`, tokenHash, now).Scan(&p.ID, &p.Email, &p.CodeHMAC, &p.BrowserHash)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return service.PendingLogin{}, service.ErrInvalidCode
 	}

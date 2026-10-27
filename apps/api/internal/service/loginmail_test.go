@@ -19,3 +19,10 @@ func TestLoginMailGivesTheCodeTheLinkAndTheValidity(t *testing.T) {
 		}
 	}
 }
+
+func TestLoginMailWithoutLinkForTheApp(t *testing.T) {
+	_, text := LoginMail("042917", "", 10*time.Minute)
+	if strings.Contains(text, "lien") || !strings.Contains(text, "042917") {
+		t.Errorf("e-mail de l'app :\n%s", text)
+	}
+}

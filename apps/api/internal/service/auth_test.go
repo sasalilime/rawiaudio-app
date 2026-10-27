@@ -93,7 +93,7 @@ func newFixture(t *testing.T, dailyMailCap int) fixture {
 // login demande un code pour email puis le vérifie ; renvoie le compte et le jeton de session.
 func (f fixture) login(t *testing.T, email string) (service.Account, string) {
 	t.Helper()
-	if err := f.auth.RequestLogin(t.Context(), email); err != nil {
+	if _, err := f.auth.RequestLogin(t.Context(), email, true); err != nil {
 		t.Fatalf("RequestLogin(%q): %v", email, err)
 	}
 	code, _ := f.mail.codeAndToken(t)
@@ -106,7 +106,7 @@ func (f fixture) login(t *testing.T, email string) (service.Account, string) {
 
 func TestLoginByCodeOpensASessionThenLogoutClosesIt(t *testing.T) {
 	f := newFixture(t, 90)
-	if err := f.auth.RequestLogin(t.Context(), "parent@example.com"); err != nil {
+	if _, err := f.auth.RequestLogin(t.Context(), "parent@example.com", true); err != nil {
 		t.Fatal(err)
 	}
 	if f.mail.to != "parent@example.com" {
@@ -136,16 +136,17 @@ func TestLoginByCodeOpensASessionThenLogoutClosesIt(t *testing.T) {
 
 func TestLoginByLinkIsSingleUseAndClosesTheCode(t *testing.T) {
 	f := newFixture(t, 90)
-	if err := f.auth.RequestLogin(t.Context(), "parent@example.com"); err != nil {
+	proof, err := f.auth.RequestLogin(t.Context(), "parent@example.com", true)
+	if err != nil {
 		t.Fatal(err)
 	}
 	code, link := f.mail.codeAndToken(t)
 
-	account, token, err := f.auth.VerifyLink(t.Context(), link)
+	account, token, err := f.auth.VerifyLink(t.Context(), link, proof)
 	if err != nil || account.Email != "parent@example.com" || token == "" {
 		t.Fatalf("VerifyLink : %+v, %q, %v", account, token, err)
 	}
-	if _, _, err := f.auth.VerifyLink(t.Context(), link); !errors.Is(err, service.ErrInvalidCode) {
+	if _, _, err := f.auth.VerifyLink(t.Context(), link, proof); !errors.Is(err, service.ErrInvalidCode) {
 		t.Errorf("lien réutilisé : %v", err)
 	}
 	if _, _, err := f.auth.VerifyCode(t.Context(), "parent@example.com", code); !errors.Is(err, service.ErrInvalidCode) {
@@ -165,7 +166,8 @@ func TestCodeIsRefused(t *testing.T) {
 
 	t.Run("expiré après 10 minutes", func(t *testing.T) {
 		f := newFixture(t, 90)
-		if err := f.auth.RequestLogin(t.Context(), "parent@example.com"); err != nil {
+		proof, err := f.auth.RequestLogin(t.Context(), "parent@example.com", true)
+		if err != nil {
 			t.Fatal(err)
 		}
 		code, link := f.mail.codeAndToken(t)
@@ -173,25 +175,26 @@ func TestCodeIsRefused(t *testing.T) {
 		if _, _, err := f.auth.VerifyCode(t.Context(), "parent@example.com", code); !errors.Is(err, service.ErrInvalidCode) {
 			t.Errorf("code expiré accepté : %v", err)
 		}
-		if _, _, err := f.auth.VerifyLink(t.Context(), link); !errors.Is(err, service.ErrInvalidCode) {
+		if _, _, err := f.auth.VerifyLink(t.Context(), link, proof); !errors.Is(err, service.ErrInvalidCode) {
 			t.Errorf("lien expiré accepté : %v", err)
 		}
 	})
 
 	t.Run("remplacé par une demande plus récente", func(t *testing.T) {
 		f := newFixture(t, 90)
-		if err := f.auth.RequestLogin(t.Context(), "parent@example.com"); err != nil {
+		oldProof, err := f.auth.RequestLogin(t.Context(), "parent@example.com", true)
+		if err != nil {
 			t.Fatal(err)
 		}
 		oldCode, oldLink := f.mail.codeAndToken(t)
-		if err := f.auth.RequestLogin(t.Context(), "parent@example.com"); err != nil {
+		if _, err := f.auth.RequestLogin(t.Context(), "parent@example.com", true); err != nil {
 			t.Fatal(err)
 		}
 		newCode, _ := f.mail.codeAndToken(t)
 		if oldCode == newCode {
 			t.Skip("même code tiré deux fois (une chance sur un million)")
 		}
-		if _, _, err := f.auth.VerifyLink(t.Context(), oldLink); !errors.Is(err, service.ErrInvalidCode) {
+		if _, _, err := f.auth.VerifyLink(t.Context(), oldLink, oldProof); !errors.Is(err, service.ErrInvalidCode) {
 			t.Errorf("ancien lien accepté : %v", err)
 		}
 		if _, _, err := f.auth.VerifyCode(t.Context(), "parent@example.com", oldCode); !errors.Is(err, service.ErrInvalidCode) {
@@ -204,11 +207,11 @@ func TestCodeIsRefused(t *testing.T) {
 
 	t.Run("pour une autre adresse", func(t *testing.T) {
 		f := newFixture(t, 90)
-		if err := f.auth.RequestLogin(t.Context(), "a@example.com"); err != nil {
+		if _, err := f.auth.RequestLogin(t.Context(), "a@example.com", true); err != nil {
 			t.Fatal(err)
 		}
 		codeA, _ := f.mail.codeAndToken(t)
-		if err := f.auth.RequestLogin(t.Context(), "b@example.com"); err != nil {
+		if _, err := f.auth.RequestLogin(t.Context(), "b@example.com", true); err != nil {
 			t.Fatal(err)
 		}
 		if _, _, err := f.auth.VerifyCode(t.Context(), "b@example.com", codeA); !errors.Is(err, service.ErrInvalidCode) {
@@ -218,7 +221,7 @@ func TestCodeIsRefused(t *testing.T) {
 
 	t.Run("après 5 essais faux, même le bon", func(t *testing.T) {
 		f := newFixture(t, 90)
-		if err := f.auth.RequestLogin(t.Context(), "parent@example.com"); err != nil {
+		if _, err := f.auth.RequestLogin(t.Context(), "parent@example.com", true); err != nil {
 			t.Fatal(err)
 		}
 		code, _ := f.mail.codeAndToken(t)
@@ -241,7 +244,7 @@ func TestCodeIsRefused(t *testing.T) {
 // en même temps n'ouvre qu'une session.
 func TestCodeAttemptsHoldUnderConcurrency(t *testing.T) {
 	f := newFixture(t, 90)
-	if err := f.auth.RequestLogin(t.Context(), "parent@example.com"); err != nil {
+	if _, err := f.auth.RequestLogin(t.Context(), "parent@example.com", true); err != nil {
 		t.Fatal(err)
 	}
 	code, _ := f.mail.codeAndToken(t)
@@ -271,7 +274,7 @@ func TestCodeAttemptsHoldUnderConcurrency(t *testing.T) {
 		t.Errorf("bon code envoyé deux fois en même temps : %d acceptés, %d refusés", ok, refused)
 	}
 
-	if err := f.auth.RequestLogin(t.Context(), "autre@example.com"); err != nil {
+	if _, err := f.auth.RequestLogin(t.Context(), "autre@example.com", true); err != nil {
 		t.Fatal(err)
 	}
 	errs := make(chan error, 12)
@@ -294,21 +297,21 @@ func TestRequestLoginLimits(t *testing.T) {
 	t.Run("3 demandes par adresse et par heure", func(t *testing.T) {
 		f := newFixture(t, 90)
 		for range service.MaxRequestsPerEmail {
-			if err := f.auth.RequestLogin(t.Context(), "parent@example.com"); err != nil {
+			if _, err := f.auth.RequestLogin(t.Context(), "parent@example.com", true); err != nil {
 				t.Fatal(err)
 			}
 		}
-		if err := f.auth.RequestLogin(t.Context(), "parent@example.com"); !errors.Is(err, service.ErrTooManyRequests) {
+		if _, err := f.auth.RequestLogin(t.Context(), "parent@example.com", true); !errors.Is(err, service.ErrTooManyRequests) {
 			t.Errorf("4e demande : %v", err)
 		}
 		if f.mail.count != service.MaxRequestsPerEmail {
 			t.Errorf("%d e-mails partis, attendu %d", f.mail.count, service.MaxRequestsPerEmail)
 		}
-		if err := f.auth.RequestLogin(t.Context(), "autre@example.com"); err != nil {
+		if _, err := f.auth.RequestLogin(t.Context(), "autre@example.com", true); err != nil {
 			t.Errorf("une autre adresse est bloquée : %v", err)
 		}
 		f.clock.Advance(time.Hour)
-		if err := f.auth.RequestLogin(t.Context(), "parent@example.com"); err != nil {
+		if _, err := f.auth.RequestLogin(t.Context(), "parent@example.com", true); err != nil {
 			t.Errorf("toujours bloquée une heure après : %v", err)
 		}
 	})
@@ -316,11 +319,11 @@ func TestRequestLoginLimits(t *testing.T) {
 	t.Run("plafond quotidien d'e-mails", func(t *testing.T) {
 		f := newFixture(t, 2)
 		for _, email := range []string{"a@example.com", "b@example.com"} {
-			if err := f.auth.RequestLogin(t.Context(), email); err != nil {
+			if _, err := f.auth.RequestLogin(t.Context(), email, true); err != nil {
 				t.Fatal(err)
 			}
 		}
-		if err := f.auth.RequestLogin(t.Context(), "c@example.com"); !errors.Is(err, service.ErrMailQuota) {
+		if _, err := f.auth.RequestLogin(t.Context(), "c@example.com", true); !errors.Is(err, service.ErrMailQuota) {
 			t.Errorf("au-delà du plafond : %v", err)
 		}
 	})
@@ -335,7 +338,7 @@ func TestEmailIsNormalized(t *testing.T) {
 	}
 
 	for _, email := range []string{"", "pasdarobase", "Parent <parent@example.com>", "a@b\r\nBcc: c@d", strings.Repeat("a", 250) + "@x.fr"} {
-		if err := f.auth.RequestLogin(t.Context(), email); !errors.Is(err, service.ErrInvalidEmail) {
+		if _, err := f.auth.RequestLogin(t.Context(), email, true); !errors.Is(err, service.ErrInvalidEmail) {
 			t.Errorf("%q : %v", email, err)
 		}
 	}
@@ -410,8 +413,88 @@ func TestCleanupRemovesOldRequestsAndExpiredSessions(t *testing.T) {
 		t.Errorf("session expirée : %v", err)
 	}
 	for range service.MaxRequestsPerEmail {
-		if err := f.auth.RequestLogin(t.Context(), "parent@example.com"); err != nil {
+		if _, err := f.auth.RequestLogin(t.Context(), "parent@example.com", true); err != nil {
 			t.Fatal(err)
 		}
+	}
+}
+
+// Le lien ne marche que dans le navigateur qui a demandé le code (relecture de sécurité du 27/10/2026) :
+// un attaquant ne peut plus envoyer à sa victime le lien de son propre compte.
+func TestLinkOnlyWorksInTheBrowserThatAskedForIt(t *testing.T) {
+	f := newFixture(t, 90)
+	attackerProof, err := f.auth.RequestLogin(t.Context(), "attaquant@example.com", true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, link := f.mail.codeAndToken(t)
+
+	for name, proof := range map[string]string{"sans preuve": "", "preuve d'un autre navigateur": strings.Repeat("Z", 43)} {
+		if _, _, err := f.auth.VerifyLink(t.Context(), link, proof); !errors.Is(err, service.ErrInvalidCode) {
+			t.Errorf("lien ouvert %s : %v", name, err)
+		}
+	}
+	if _, _, err := f.auth.VerifyLink(t.Context(), link, attackerProof); err != nil {
+		t.Errorf("le navigateur qui a demandé le code est refusé : %v", err)
+	}
+}
+
+// L'app mobile n'a que le code : son e-mail n'a pas de lien, et sa demande n'ouvre rien par un lien.
+func TestAppLoginMailHasNoLink(t *testing.T) {
+	f := newFixture(t, 90)
+	proof, err := f.auth.RequestLogin(t.Context(), "parent@example.com", false)
+	if err != nil || proof != "" {
+		t.Fatalf("preuve %q, erreur %v", proof, err)
+	}
+	if strings.Contains(f.mail.text, "jeton=") {
+		t.Errorf("lien dans l'e-mail de l'app :\n%s", f.mail.text)
+	}
+	code := codeInSubject.FindStringSubmatch(f.mail.subject)
+	if code == nil {
+		t.Fatalf("pas de code dans le sujet %q", f.mail.subject)
+	}
+	if _, _, err := f.auth.VerifyCode(t.Context(), "parent@example.com", code[1]); err != nil {
+		t.Errorf("le code de l'app est refusé : %v", err)
+	}
+}
+
+// Sur une journée : 8 demandes par adresse au plus, même en respectant la limite horaire.
+func TestRequestLoginDailyLimitPerEmail(t *testing.T) {
+	f := newFixture(t, 90)
+	sent := 0
+	for hour := range 24 {
+		for range service.MaxRequestsPerEmail {
+			if _, err := f.auth.RequestLogin(t.Context(), "victime@example.com", false); err == nil {
+				sent++
+			} else if !errors.Is(err, service.ErrTooManyRequests) {
+				t.Fatalf("heure %d : %v", hour, err)
+			}
+		}
+		f.clock.Advance(time.Hour)
+	}
+	if sent != service.MaxRequestsPerEmailPerDay {
+		t.Errorf("%d demandes acceptées en 24 heures, attendu %d", sent, service.MaxRequestsPerEmailPerDay)
+	}
+}
+
+// Des demandes simultanées pour une adresse ne passent pas toutes la limite (comptage et enregistrement
+// sous le même verrou).
+func TestRequestLoginLimitHoldsUnderConcurrency(t *testing.T) {
+	f := newFixture(t, 90)
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	accepted := 0
+	for range 30 {
+		wg.Go(func() {
+			if _, err := f.auth.RequestLogin(context.Background(), "victime@example.com", false); err == nil {
+				mu.Lock()
+				accepted++
+				mu.Unlock()
+			}
+		})
+	}
+	wg.Wait()
+	if accepted != service.MaxRequestsPerEmail {
+		t.Errorf("%d demandes simultanées acceptées, attendu %d", accepted, service.MaxRequestsPerEmail)
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -26,6 +27,8 @@ type fakeAuth struct {
 	loggedOut  string // jeton passé à Logout
 	deletedID  int64  // compte passé à DeleteAccount
 	requested  string // adresse passée à RequestLogin
+	forBrowser bool   // RequestLogin appelé pour la PWA
+	proof      string // preuve du navigateur passée à VerifyLink
 }
 
 var (
@@ -33,16 +36,20 @@ var (
 	accountB = service.Account{ID: 2, Email: "b@example.com"}
 )
 
-func (f *fakeAuth) RequestLogin(_ context.Context, email string) error {
-	f.requested = email
-	return f.requestErr
+func (f *fakeAuth) RequestLogin(_ context.Context, email string, forBrowser bool) (string, error) {
+	f.requested, f.forBrowser = email, forBrowser
+	if forBrowser && f.requestErr == nil {
+		return "preuve-du-navigateur", nil
+	}
+	return "", f.requestErr
 }
 
 func (f *fakeAuth) VerifyCode(_ context.Context, _, _ string) (service.Account, string, error) {
 	return accountA, tokenA, f.verifyErr
 }
 
-func (f *fakeAuth) VerifyLink(_ context.Context, _ string) (service.Account, string, error) {
+func (f *fakeAuth) VerifyLink(_ context.Context, _, proof string) (service.Account, string, error) {
+	f.proof = proof
 	return accountA, tokenA, f.verifyErr
 }
 
@@ -89,7 +96,7 @@ func errorCode(t *testing.T, rec *httptest.ResponseRecorder) string {
 func TestRequestLogin(t *testing.T) {
 	t.Run("acceptée : 202", func(t *testing.T) {
 		auth := &fakeAuth{}
-		rec := call(auth, http.MethodPost, "/auth/login", `{"email":"Parent@Example.com"}`, nil)
+		rec := call(auth, http.MethodPost, "/auth/login", `{"email":"Parent@Example.com","client":"web"}`, nil)
 		if rec.Code != http.StatusAccepted || auth.requested != "Parent@Example.com" {
 			t.Errorf("code %d, adresse transmise %q", rec.Code, auth.requested)
 		}
@@ -124,7 +131,7 @@ func TestRequestLogin(t *testing.T) {
 		{errors.New("panne"), http.StatusInternalServerError, "internal"},
 	} {
 		t.Run(tt.wantErr, func(t *testing.T) {
-			rec := call(&fakeAuth{requestErr: tt.err}, http.MethodPost, "/auth/login", `{"email":"a@b.fr"}`, nil)
+			rec := call(&fakeAuth{requestErr: tt.err}, http.MethodPost, "/auth/login", `{"email":"a@b.fr","client":"app"}`, nil)
 			if rec.Code != tt.wantCode || errorCode(t, rec) != tt.wantErr {
 				t.Errorf("code %d", rec.Code)
 			}
@@ -270,7 +277,7 @@ func TestLoginIsLimitedPerIP(t *testing.T) {
 	// Un seul routeur : les limites vivent dans ses limiteurs.
 	router := NewRouter(func(context.Context) error { return nil }, nil, &fakeAuth{}, nil)
 	send := func(remoteAddr, forwardedFor string) int {
-		req := httptest.NewRequest(http.MethodPost, "/auth/login", strings.NewReader(`{"email":"a@b.fr"}`))
+		req := httptest.NewRequest(http.MethodPost, "/auth/login", strings.NewReader(`{"email":"a@b.fr","client":"app"}`))
 		req.RemoteAddr = remoteAddr
 		if forwardedFor != "" {
 			req.Header.Set("X-Forwarded-For", forwardedFor)
@@ -313,7 +320,7 @@ func TestCrossOriginRefusesOtherSites(t *testing.T) {
 	}
 	handler := protect(NewRouter(func(context.Context) error { return nil }, nil, &fakeAuth{}, nil))
 	send := func(header map[string]string) *httptest.ResponseRecorder {
-		req := httptest.NewRequest(http.MethodPost, "https://api.rawiaudio.com/auth/login", strings.NewReader(`{"email":"a@b.fr"}`))
+		req := httptest.NewRequest(http.MethodPost, "https://api.rawiaudio.com/auth/login", strings.NewReader(`{"email":"a@b.fr","client":"app"}`))
 		for k, v := range header {
 			req.Header.Set(k, v)
 		}
@@ -398,5 +405,84 @@ func TestSyncHistory(t *testing.T) {
 		if rec := send(history, body, bearer(tokenA)); rec.Code != http.StatusBadRequest || history.got != nil {
 			t.Errorf("%s : code %d", name, rec.Code)
 		}
+	}
+}
+
+// Le lien de l'e-mail ne marche que dans le navigateur qui a demandé le code : la PWA reçoit une preuve en cookie,
+// l'app n'en reçoit pas, et /auth/link transmet la preuve du cookie au service.
+func TestLoginLinkIsBoundToTheBrowser(t *testing.T) {
+	auth := &fakeAuth{}
+	rec := call(auth, http.MethodPost, "/auth/login", `{"email":"a@example.com","client":"web"}`, nil)
+	cookie := rec.Header().Get("Set-Cookie")
+	if rec.Code != http.StatusAccepted || !auth.forBrowser {
+		t.Fatalf("PWA : code %d, pour un navigateur %v", rec.Code, auth.forBrowser)
+	}
+	for _, want := range []string{"__Host-rawi_login=preuve-du-navigateur", "Max-Age=600", "HttpOnly", "Secure", "SameSite=Lax"} {
+		if !strings.Contains(cookie, want) {
+			t.Errorf("Set-Cookie sans %q : %q", want, cookie)
+		}
+	}
+
+	auth = &fakeAuth{}
+	rec = call(auth, http.MethodPost, "/auth/login", `{"email":"a@example.com","client":"app"}`, nil)
+	if rec.Code != http.StatusAccepted || auth.forBrowser || rec.Header().Get("Set-Cookie") != "" {
+		t.Errorf("app : code %d, pour un navigateur %v, Set-Cookie %q", rec.Code, auth.forBrowser, rec.Header().Get("Set-Cookie"))
+	}
+
+	auth = &fakeAuth{}
+	rec = call(auth, http.MethodPost, "/auth/link", `{"token":"`+tokenB+`","client":"web"}`, map[string]string{"Cookie": loginCookie + "=preuve-du-navigateur"})
+	if rec.Code != http.StatusOK || auth.proof != "preuve-du-navigateur" {
+		t.Errorf("lien : code %d, preuve transmise %q", rec.Code, auth.proof)
+	}
+	if !strings.Contains(strings.Join(rec.Header().Values("Set-Cookie"), "\n"), loginCookie+"=; Path=/; Max-Age=0") {
+		t.Errorf("preuve gardée après la connexion : %q", rec.Header().Values("Set-Cookie"))
+	}
+	auth = &fakeAuth{}
+	call(auth, http.MethodPost, "/auth/link", `{"token":"`+tokenB+`","client":"web"}`, nil)
+	if auth.proof != "" {
+		t.Errorf("preuve inventée sans cookie : %q", auth.proof)
+	}
+}
+
+// Un navigateur (en-tête Origin) ne peut pas se faire passer pour l'app afin de recevoir le jeton dans la réponse.
+func TestBrowserCannotAskForAnAppToken(t *testing.T) {
+	origin := map[string]string{"Origin": "https://app.rawiaudio.com"}
+	for _, tt := range []struct{ target, body string }{
+		{"/auth/code", `{"email":"a@example.com","code":"042917","client":"app"}`},
+		{"/auth/link", `{"token":"` + tokenB + `","client":"app"}`},
+	} {
+		rec := call(&fakeAuth{}, http.MethodPost, tt.target, tt.body, origin)
+		if rec.Code != http.StatusBadRequest || strings.Contains(rec.Body.String(), tokenA) {
+			t.Errorf("%s : code %d, corps %s", tt.target, rec.Code, rec.Body.String())
+		}
+		if rec := call(&fakeAuth{}, http.MethodPost, tt.target, tt.body, nil); rec.Code != http.StatusOK {
+			t.Errorf("%s depuis l'app (sans Origin) : code %d", tt.target, rec.Code)
+		}
+	}
+}
+
+// Une adresse IPv6 compte pour son bloc /64 : une machine ne contourne plus la limite en changeant d'adresse.
+func TestIPv6IsLimitedPerSlash64(t *testing.T) {
+	router := NewRouter(func(context.Context) error { return nil }, nil, &fakeAuth{}, nil)
+	send := func(remoteAddr, forwardedFor string) int {
+		req := httptest.NewRequest(http.MethodPost, "/auth/login", strings.NewReader(`{"email":"a@b.fr","client":"app"}`))
+		req.RemoteAddr = remoteAddr
+		if forwardedFor != "" {
+			req.Header.Set("X-Forwarded-For", forwardedFor)
+		}
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, req)
+		return rec.Code
+	}
+	for i := range loginRequestsPerIP {
+		if code := send("127.0.0.1:50000", fmt.Sprintf("2001:db8:1:2::%x", i+1)); code != http.StatusAccepted {
+			t.Fatalf("demande %d : %d", i+1, code)
+		}
+	}
+	if code := send("127.0.0.1:50000", "2001:db8:1:2:ffff:ffff:ffff:ffff"); code != http.StatusTooManyRequests {
+		t.Errorf("autre adresse du même /64 : %d", code)
+	}
+	if code := send("127.0.0.1:50000", "2001:db8:1:3::1"); code != http.StatusAccepted {
+		t.Errorf("un autre /64 est bloqué : %d", code)
 	}
 }
