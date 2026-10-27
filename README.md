@@ -32,6 +32,8 @@ cp .env.example .env    # puis changer le mot de passe sur ses trois lignes, et 
   ```
 
 Les migrations de `migrations/` s'appliquent au démarrage de l'API.
+
+Les e-mails du dev (connexion, ADR-0012) partent dans Mailpit, un faux serveur SMTP : `docker compose up -d mailpit`, puis http://127.0.0.1:8026 pour les lire. Rien ne part vraiment.
 Données de développement (après un premier démarrage, rejouable) :
 ```bash
 docker compose exec -T db psql -U rawi -d rawi -v ON_ERROR_STOP=1 < dev/seed.sql

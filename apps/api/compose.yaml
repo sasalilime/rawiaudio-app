@@ -22,6 +22,17 @@ services:
       timeout: 5s
       retries: 15
 
+  mailpit:
+    # Faux serveur SMTP (ADR-0012) : il garde les e-mails de l'API, lisibles sur http://127.0.0.1:8026 ; rien ne part.
+    # Ports 1026 et 8026 sur la machine : 8025 est déjà pris par le Mailpit d'institut-ihsan-marcq.
+    # ponytail: v1.31.5 pour la règle des 15 jours ; la v1.32.0 (22 octobre 2026) corrige des failles de l'interface
+    # (image piégée, balises de redirection), sans risque ici : joignable depuis la machine seulement, et seuls
+    # les e-mails de l'API y arrivent. Passer à la v1.32.0 (ou plus) après le 6 novembre 2026.
+    image: axllent/mailpit:v1.31.5@sha256:94f6b70c1436defae6799d9ac7ff0eeff9540465b842026d5cdb018f1c0234ea
+    ports:
+      - "127.0.0.1:1026:1025" # SMTP
+      - "127.0.0.1:8026:8025" # interface web et API de Mailpit
+
   api:
     build: .
     environment:
