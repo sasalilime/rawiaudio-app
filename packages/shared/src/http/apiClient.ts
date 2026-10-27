@@ -1,4 +1,4 @@
-import type { Account, AudioUrl, Client, Episode, EpisodeList, Lang, SessionOpened } from './types.ts'
+import type { Account, AudioUrl, Client, Episode, EpisodeList, HeardEpisodes, Lang, SessionOpened } from './types.ts'
 
 /** Échec d'un appel : status 0 quand la requête n'a pas pu partir (hors ligne, serveur injoignable). */
 export class ApiError extends Error {
@@ -88,6 +88,7 @@ export function createApi(baseUrl: string, fetchFn: typeof fetch = fetch, option
     deleteAccount: async () => {
       await call('DELETE', '/account')
     },
+    syncHistory: (episodeIds: string[]) => postJson<HeardEpisodes>('/account/history', { episodeIds }),
   }
 }
 

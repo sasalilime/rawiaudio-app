@@ -3,6 +3,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { nextPart } from '@rawiaudio/shared/core/domain/catalog.ts'
 import { createAccountSession } from '@rawiaudio/shared/core/useCases/accountSession.ts'
+import { startHistorySync } from '@rawiaudio/shared/core/useCases/historySync.ts'
 import { createDownloadManager } from '@rawiaudio/shared/core/useCases/downloadManager.ts'
 import { createGetEpisode } from '@rawiaudio/shared/core/useCases/getEpisode.ts'
 import { createListCatalog } from '@rawiaudio/shared/core/useCases/listCatalog.ts'
@@ -12,6 +13,7 @@ import { createPlaybackSession } from '@rawiaudio/shared/core/useCases/playbackS
 import { createHtmlAudioPlayer } from './infra/audio/htmlAudioPlayer.ts'
 import { createApi } from '@rawiaudio/shared/http/apiClient.ts'
 import { createHttpAuthGateway } from '@rawiaudio/shared/http/authGateway.ts'
+import { createHttpHistoryGateway } from '@rawiaudio/shared/http/historyGateway.ts'
 import { createHttpEpisodeRepository } from '@rawiaudio/shared/http/episodeRepository.ts'
 import { createCacheAudioStore } from './infra/offline/cacheAudioStore.ts'
 import { registerServiceWorker, unregisterServiceWorkers } from './infra/offline/registerServiceWorker.ts'
@@ -58,6 +60,8 @@ const useCases: UseCases = {
 downloads.load().catch((error: unknown) => console.warn('téléchargements illisibles', error))
 // Y a-t-il une session ? load ne lève rien : hors ligne, l'état reste « unknown » et Mon compte propose de réessayer.
 void account.load()
+// Connecté, l'historique d'écoute suit le compte sur tous les appareils de la famille (ADR-0007).
+startHistorySync(history, account, createHttpHistoryGateway(api))
 
 if (import.meta.env.PROD) registerServiceWorker()
 else unregisterServiceWorkers()

@@ -3,6 +3,7 @@
 import 'expo-sqlite/localStorage/install'
 import { nextPart } from '@rawiaudio/shared/core/domain/catalog.ts'
 import { createAccountSession } from '@rawiaudio/shared/core/useCases/accountSession.ts'
+import { startHistorySync } from '@rawiaudio/shared/core/useCases/historySync.ts'
 import { createDownloadManager } from '@rawiaudio/shared/core/useCases/downloadManager.ts'
 import { createGetEpisode } from '@rawiaudio/shared/core/useCases/getEpisode.ts'
 import { createListCatalog } from '@rawiaudio/shared/core/useCases/listCatalog.ts'
@@ -11,6 +12,7 @@ import { createPickRandomEpisode } from '@rawiaudio/shared/core/useCases/pickRan
 import { createPlaybackSession } from '@rawiaudio/shared/core/useCases/playbackSession.ts'
 import { createApi } from '@rawiaudio/shared/http/apiClient.ts'
 import { createHttpAuthGateway } from '@rawiaudio/shared/http/authGateway.ts'
+import { createHttpHistoryGateway } from '@rawiaudio/shared/http/historyGateway.ts'
 import { createHttpEpisodeRepository } from '@rawiaudio/shared/http/episodeRepository.ts'
 import { createLocalCatalogCache } from '@rawiaudio/shared/storage/localCatalogCache.ts'
 import { createLocalHistoryStore } from '@rawiaudio/shared/storage/localHistoryStore.ts'
@@ -64,3 +66,5 @@ downloads.load().catch((error: unknown) => console.warn('téléchargements illis
 
 // La session de l'appareil. load ne lève jamais : hors ligne, l'état reste « unknown » et l'écran du compte réessaie.
 void account.load()
+// Connecté, l'historique d'écoute suit le compte sur tous les appareils de la famille (ADR-0007).
+startHistorySync(history, account, createHttpHistoryGateway(api))

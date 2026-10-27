@@ -77,3 +77,8 @@ export interface SessionOpened {
   /** Seulement pour client "app" : à garder dans le trousseau, à renvoyer dans Authorization. */
   token?: string
 }
+
+/** Historique d'écoute du compte : envoyé par l'appareil, renvoyé fusionné par l'API. */
+export interface HeardEpisodes {
+  episodeIds: string[]
+}
