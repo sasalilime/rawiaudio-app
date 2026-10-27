@@ -1,6 +1,6 @@
 # ADR-0012 : Connexion par e-mail (lien et code)
 
-**Statut :** Accepté le 27 octobre 2026 (« oui pour tout »), sauf la question 5 (historique), encore ouverte
+**Statut :** Accepté le 27 octobre 2026
 **Date :** 27 octobre 2026
 **Décideur :** Salim
 
@@ -88,7 +88,7 @@ sessions       (token_hash PRIMARY KEY, account_id → accounts ON DELETE CASCAD
 2. ~~Durée de session~~ : 180 jours, prolongés à l'usage.
 3. ~~`expo-secure-store`~~ : oui.
 4. ~~Le partage~~ : la déconnexion et `DELETE /account` suffisent pour la tranche 6 ; « se déconnecter de tous les appareils » et la limite d'appareils se discutent avec l'abonnement.
-5. **Historique** (ADR-0007) : synchronisé dans cette tranche, ou juste après ? Sans lui, la tranche 6 ne change rien de visible tant que l'abonnement n'existe pas.
+5. ~~Historique~~ : synchronisé dans cette tranche (27 octobre 2026), voir ADR-0007.
 6. ~~Le partage du travail~~ : Salim confie toute la tranche à Claude (« fais tout », 27 octobre 2026), migrations comprises ; il relit chaque diff.
 
 ## Conséquences

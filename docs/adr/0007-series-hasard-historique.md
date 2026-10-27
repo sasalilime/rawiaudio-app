@@ -30,6 +30,11 @@
   - le tirage est fait et son URL préparée à l'avance : le clic lance le son sans attente (iOS).
 
 ## Conséquences
+- **Mise à jour du 27 octobre 2026 (ADR-0012)** : connecté, l'historique suit le compte sur tous les appareils de la famille.
+  - Un épisode entendu le reste : deux appareils se fusionnent par simple union (`POST /account/history`, table `heard_episodes`), sans conflit possible.
+  - L'appareil envoie tout ce qu'il a entendu et garde l'union renvoyée : à la connexion, au démarrage et à chaque épisode entendu. Une synchro manquée hors ligne est rattrapée par la suivante.
+  - Un épisode inconnu ou pas encore publié est ignoré. Supprimer le compte supprime son historique ; celui de l'appareil reste.
+  - La position de reprise, elle, reste sur l'appareil.
 - La PWA calcule elle-même les séries, la partie suivante et le tirage, à partir de la liste du catalogue. L'API n'a pas de route `/series`.
 - L'enchaînement lance `play()` à la fin d'une partie, sans nouveau geste de l'utilisateur. iOS l'accepte normalement sur le même élément `<audio>` : **à vérifier sur iPhone**.
 - L'historique est perdu en changeant d'appareil. Il sera synchronisé avec la tranche « connexion ».
