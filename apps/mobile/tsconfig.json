@@ -1,0 +1,16 @@
+{
+  "extends": "expo/tsconfig.base.json",
+  "compilerOptions": {
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    // Imports avec l'extension .ts, comme dans le code partagé : Node les exige pour lancer les tests sans outil.
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "erasableSyntaxOnly": true
+  },
+  "include": ["src"],
+  // Tests vérifiés à part, avec les types de Node : tsconfig.test.json.
+  "exclude": ["src/**/*.test.ts"]
+}

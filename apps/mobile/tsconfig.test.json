@@ -1,0 +1,9 @@
+// Vérification des tests : mêmes règles, plus les types de Node (node:test, node:fs…).
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "include": ["src"],
+  "exclude": []
+}

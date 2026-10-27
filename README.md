@@ -9,7 +9,7 @@ PWA, API, contrat OpenAPI et stack ops de Rawi.
 |---|---|
 | `apps/web/` | PWA React + Vite + TypeScript (app.rawiaudio.com, Cloudflare) |
 | `apps/api/` | API Go (api.rawiaudio.com, Docker Compose sur le VPS) |
-| `apps/mobile/` | plus tard : Expo (React Native) |
+| `apps/mobile/` | app Expo (React Native), iOS et Android |
 | `packages/shared/` | code TypeScript commun à la PWA et à l'app mobile |
 | `contracts/` | `openapi.yaml`, contrat entre l'API et la PWA |
 | `ops/` | stack Docker Compose de Rawi, sauvegardes, `runbooks/` |
@@ -60,7 +60,7 @@ Les images sont épinglées par digest d'index (`tag@sha256:…`) : elles ne re�
 ### Démarrer en local
 L'API doit tourner sur le port 8080 (voir plus haut) : en dev, Vite lui relaie les appels à `/api`.
 ```bash
-npm ci --ignore-scripts    # à la racine : PWA et code partagé
+npm ci --ignore-scripts    # à la racine : PWA, code partagé et app mobile
 cd apps/web
 npm run dev    # http://localhost:5180
 ```
@@ -75,6 +75,25 @@ En revenant à `npm run dev`, l'appli retire elle-même ce service worker.
 npm run typecheck    # à la racine : tous les paquets TypeScript
 npm test
 npm run build -w apps/web
+```
+
+## App mobile (`apps/mobile`)
+
+### Essayer sur un téléphone
+- Sur le téléphone : l'appli Expo Go (App Store ou Play Store).
+- Le téléphone et le poste sur le même Wi-Fi, l'API lancée sur le poste (voir plus haut).
+```bash
+cd apps/mobile
+EXPO_PUBLIC_API_URL="http://$(hostname -I | awk '{print $1}'):8080" npx expo start
+```
+Scanner le QR code affiché : avec l'appareil photo sur iPhone, depuis Expo Go sur Android.
+
+Les polices et les images de l'app sont dans `apps/mobile/assets/` ; la fabrication des polices est décrite dans `assets/fonts/README.md`.
+
+### Avant chaque commit
+En plus des vérifications de la PWA :
+```bash
+npm run export -w apps/mobile    # Metro empaquette l'app pour Android et iOS
 ```
 
 ## Ajouter ou mettre à jour une dépendance npm

@@ -1,0 +1,28 @@
+{
+  "expo": {
+    "name": "Rawi Audio",
+    "slug": "rawiaudio",
+    "scheme": "rawi",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "icon": "./assets/images/icon.png",
+    "backgroundColor": "#1F2A44",
+    "ios": {
+      "bundleIdentifier": "com.rawiaudio.app",
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.rawiaudio.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#1F2A44"
+      }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-sqlite",
+      ["expo-audio", { "enableBackgroundPlayback": true, "microphonePermission": false, "recordAudioAndroid": false }]
+    ]
+  }
+}

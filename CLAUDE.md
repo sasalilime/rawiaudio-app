@@ -11,7 +11,7 @@
 apps/
   web/       PWA React + Vite + TypeScript strict (app.rawiaudio.com, Cloudflare)
   api/       API Go (api.rawiaudio.com, Docker Compose sur le VPS OVH)
-  mobile/    plus tard : Expo (React Native)
+  mobile/    app Expo (React Native), iOS et Android (ADR-0008)
 packages/
   shared/    code TypeScript commun à web/ et mobile/ : core, client HTTP, stockages (ADR-0008)
 contracts/
@@ -61,6 +61,17 @@ docs/adr/    décisions d'architecture
 - Audio : un seul élément `<audio>`, jamais Web Audio. Gestionnaires Media Session enregistrés dans l'événement `playing`.
 - Hors ligne : cache par identifiant d'épisode, jamais par URL (les URLs signées changent). Réponses 206 depuis le cache pour les requêtes Range.
 - Types de l'API alignés sur `contracts/openapi.yaml` (outil de génération à choisir ; en attendant, types écrits à la main dans `packages/shared/src/http/types.ts`, traduits en entités de `core/domain` par `http/`).
+
+## App mobile (`apps/mobile`)
+- Expo (React Native), ADR-0008. Écrans dans `src/app/` (expo-router : un fichier par écran), composants dans `src/ui/`.
+- Comme la PWA : `infra/audio` (expo-audio, écran verrouillé), `infra/offline` (expo-file-system), `src/main.ts` seul point d'assemblage, `src/architecture.test.ts`.
+- Téléchargements dans le cache de l'appli, jamais dans Documents : Apple refuse qu'un contenu re-téléchargeable parte dans la sauvegarde iCloud.
+- Accessibilité : `accessibilityRole` et libellé sur chaque élément touchable, cibles de 48 points au moins.
+- Style du site : palette et polices dans `src/ui/theme.ts` ; Lalezar et Literata en TTF dans `assets/fonts/` (provenance dans son README), symbole et icônes dans `assets/images/`.
+- Pièges :
+  - jamais de `fontWeight` avec nos polices : Android changerait de police. Une graisse = un fichier (`fonts.texteAppuye`) ;
+  - pas de `<Link asChild>` autour d'un `Pressable` dont le style dépend de `pressed` : le style est perdu. Naviguer avec `router.push` ;
+  - pas de fichier `expo-env.d.ts` : sans `typedRoutes`, `expo start` le supprime et réécrit `tsconfig.json`. Les types d'Expo passent par `src/expo-types.d.ts`.
 
 ## Audio
 - Cloudflare R2, bucket privé, juridiction EU. Clés : `<langue>/<numéro>-<slug>/audio-128.mp3`.
