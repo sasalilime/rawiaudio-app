@@ -24,7 +24,7 @@ func TestCORS(t *testing.T) {
 		{name: "autre origine : pas d'autorisation", allowed: app, method: http.MethodGet, origin: "https://exemple.com", wantCode: 200},
 		{name: "sans origine (curl, même origine)", allowed: app, method: http.MethodGet, wantCode: 200},
 		{name: "CORS désactivé en dev", allowed: "", method: http.MethodGet, origin: app, wantCode: 200},
-		{name: "preflight autorisé", allowed: app, method: http.MethodOptions, origin: app, preflight: true, wantCode: 204, wantOrigin: app, wantMethods: "GET"},
+		{name: "preflight autorisé", allowed: app, method: http.MethodOptions, origin: app, preflight: true, wantCode: 204, wantOrigin: app, wantMethods: "GET, POST, DELETE"},
 		{name: "preflight d'une autre origine", allowed: app, method: http.MethodOptions, origin: "https://exemple.com", preflight: true, wantCode: 204},
 	}
 	for _, tt := range tests {

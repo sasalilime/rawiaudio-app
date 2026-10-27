@@ -35,7 +35,7 @@ func TestHealth(t *testing.T) {
 			// On passe par NewRouter pour tester aussi l'enregistrement de la route.
 			rec := httptest.NewRecorder()
 			req := httptest.NewRequest(http.MethodGet, "/health", nil)
-			NewRouter(tt.ping, nil).ServeHTTP(rec, req) // /health n'utilise pas le catalogue
+			NewRouter(tt.ping, nil, nil).ServeHTTP(rec, req) // /health n'utilise ni le catalogue ni la connexion
 
 			if rec.Code != tt.wantCode {
 				t.Errorf("code = %d, attendu %d", rec.Code, tt.wantCode)

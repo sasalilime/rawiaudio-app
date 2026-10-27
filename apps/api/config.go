@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"os"
 	"slices"
+	"strconv"
 	"strings"
 )
 
@@ -22,6 +23,17 @@ type config struct {
 	CORSAllowedOrigin string
 	// Adresse publique des illustrations (ADR-0009), sans / final. https://media.rawiaudio.com par défaut.
 	ImagesBaseURL string
+
+	// Connexion par e-mail (ADR-0012).
+	AuthSecret   string // clé du HMAC des codes, 32 caractères au moins : ne jamais la logger
+	AppURL       string // adresse de la PWA, sans / final : le lien de l'e-mail y mène
+	SMTPHost     string // smtp.resend.com en production, 127.0.0.1 (Mailpit) en dev
+	SMTPPort     string // 465 en production (TLS dès la connexion), 1026 pour Mailpit
+	SMTPUsername string // vide : pas d'authentification (Mailpit)
+	SMTPPassword string // clé API Resend : ne jamais la logger
+	MailFrom     string // « Rawi Audio <connexion@rawiaudio.com> »
+	// E-mails de connexion par 24 heures, sous le quota du fournisseur (100 par jour pour Resend gratuit).
+	MailDailyCap int
 }
 
 func loadConfig() (config, error) {
@@ -35,6 +47,13 @@ func loadConfig() (config, error) {
 		R2SecretAccessKey: os.Getenv("R2_SECRET_ACCESS_KEY"),
 		CORSAllowedOrigin: os.Getenv("CORS_ALLOWED_ORIGIN"),
 		ImagesBaseURL:     strings.TrimSuffix(os.Getenv("IMAGES_BASE_URL"), "/"),
+		AuthSecret:        os.Getenv("AUTH_SECRET"),
+		AppURL:            strings.TrimSuffix(os.Getenv("APP_URL"), "/"),
+		SMTPHost:          os.Getenv("SMTP_HOST"),
+		SMTPPort:          os.Getenv("SMTP_PORT"),
+		SMTPUsername:      os.Getenv("SMTP_USERNAME"),
+		SMTPPassword:      os.Getenv("SMTP_PASSWORD"),
+		MailFrom:          os.Getenv("MAIL_FROM"),
 	}
 	if cfg.Port == "" {
 		cfg.Port = "8080"
@@ -51,6 +70,11 @@ func loadConfig() (config, error) {
 		"R2_BUCKET":            cfg.R2Bucket,
 		"R2_ACCESS_KEY_ID":     cfg.R2AccessKeyID,
 		"R2_SECRET_ACCESS_KEY": cfg.R2SecretAccessKey,
+		"AUTH_SECRET":          cfg.AuthSecret,
+		"APP_URL":              cfg.AppURL,
+		"SMTP_HOST":            cfg.SMTPHost,
+		"SMTP_PORT":            cfg.SMTPPort,
+		"MAIL_FROM":            cfg.MailFrom,
 	} {
 		if value == "" {
 			missing = append(missing, name)
@@ -65,6 +89,24 @@ func loadConfig() (config, error) {
 	base, err := url.Parse(cfg.ImagesBaseURL)
 	if err != nil || (base.Scheme != "https" && base.Scheme != "http") || base.Host == "" || base.RawQuery != "" || base.Fragment != "" {
 		return config{}, fmt.Errorf("IMAGES_BASE_URL invalide : %q, attendu par exemple https://media.rawiaudio.com", cfg.ImagesBaseURL)
+	}
+
+	// Un secret court se devinerait, et avec lui les codes à partir de leurs empreintes.
+	if len(cfg.AuthSecret) < 32 {
+		return config{}, fmt.Errorf("AUTH_SECRET trop court : 32 caractères au moins (openssl rand -hex 32)")
+	}
+	// Le lien de l'e-mail est cette adresse + "/connexion#jeton=…" : une origine seule, sans chemin.
+	app, err := url.Parse(cfg.AppURL)
+	if err != nil || (app.Scheme != "https" && app.Scheme != "http") || app.Host == "" || app.Path != "" || app.RawQuery != "" || app.Fragment != "" {
+		return config{}, fmt.Errorf("APP_URL invalide : %q, attendu par exemple https://app.rawiaudio.com", cfg.AppURL)
+	}
+	cfg.MailDailyCap = 90
+	if raw := os.Getenv("MAIL_DAILY_CAP"); raw != "" {
+		n, err := strconv.Atoi(raw)
+		if err != nil || n < 1 {
+			return config{}, fmt.Errorf("MAIL_DAILY_CAP invalide : %q, attendu un entier positif", raw)
+		}
+		cfg.MailDailyCap = n
 	}
 	return cfg, nil
 }

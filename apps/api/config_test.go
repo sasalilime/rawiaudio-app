@@ -15,6 +15,14 @@ func setValidEnv(t *testing.T) {
 	t.Setenv("R2_ACCESS_KEY_ID", "cle")
 	t.Setenv("R2_SECRET_ACCESS_KEY", "secret")
 	t.Setenv("IMAGES_BASE_URL", "")
+	t.Setenv("AUTH_SECRET", strings.Repeat("s", 32))
+	t.Setenv("APP_URL", "https://app.rawiaudio.com/")
+	t.Setenv("SMTP_HOST", "smtp.resend.com")
+	t.Setenv("SMTP_PORT", "465")
+	t.Setenv("SMTP_USERNAME", "resend")
+	t.Setenv("SMTP_PASSWORD", "cle")
+	t.Setenv("MAIL_FROM", "Rawi Audio <connexion@rawiaudio.com>")
+	t.Setenv("MAIL_DAILY_CAP", "")
 }
 
 func TestLoadConfig(t *testing.T) {
@@ -77,6 +85,31 @@ func TestLoadConfig(t *testing.T) {
 		}
 		if want := "DATABASE_URL, R2_SECRET_ACCESS_KEY"; !strings.Contains(err.Error(), want) {
 			t.Errorf("erreur = %q, doit contenir %q", err, want)
+		}
+	})
+
+	t.Run("connexion : valeurs par défaut et URL de la PWA sans / final", func(t *testing.T) {
+		setValidEnv(t)
+		cfg, err := loadConfig()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if cfg.AppURL != "https://app.rawiaudio.com" || cfg.MailDailyCap != 90 {
+			t.Errorf("AppURL = %q, MailDailyCap = %d", cfg.AppURL, cfg.MailDailyCap)
+		}
+	})
+
+	t.Run("connexion : réglages invalides refusés au démarrage", func(t *testing.T) {
+		for name, value := range map[string]string{
+			"AUTH_SECRET":    strings.Repeat("s", 31),
+			"APP_URL":        "https://app.rawiaudio.com/connexion",
+			"MAIL_DAILY_CAP": "0",
+		} {
+			setValidEnv(t)
+			t.Setenv(name, value)
+			if _, err := loadConfig(); err == nil || !strings.Contains(err.Error(), name) {
+				t.Errorf("%s = %q : erreur = %v, attendu un refus qui la nomme", name, value, err)
+			}
 		}
 	})
 }

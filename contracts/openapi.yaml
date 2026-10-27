@@ -122,7 +122,7 @@ paths:
               $ref: "#/components/schemas/LoginRequest"
       responses:
         "202":
-          description: Demande acceptée ; l'e-mail part en arrière-plan.
+          description: Demande acceptée ; l'e-mail est remis au service d'envoi avant la réponse.
         "400":
           description: Corps invalide (`invalid_request`) ou adresse e-mail invalide (`invalid_email`).
           content:
