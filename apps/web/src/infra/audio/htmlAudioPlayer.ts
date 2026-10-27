@@ -1,5 +1,5 @@
-import { PlaybackBlockedError } from '../../core/domain/errors.ts'
-import type { AudioPlayer, PlayerEvent, TrackMetadata } from '../../core/ports/audioPlayer.ts'
+import { PlaybackBlockedError } from '@rawiaudio/shared/core/domain/errors.ts'
+import type { AudioPlayer, PlayerEvent, TrackMetadata } from '@rawiaudio/shared/core/ports/audioPlayer.ts'
 
 /** Durée des sauts de l'écran verrouillé quand le système n'en propose pas. */
 const DEFAULT_SKIP_SECONDS = 15

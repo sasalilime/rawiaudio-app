@@ -1,4 +1,4 @@
-import type { HistoryStore } from '../../core/ports/historyStore.ts'
+import type { HistoryStore } from '../core/ports/historyStore.ts'
 
 const KEY = 'rawi:heard'
 

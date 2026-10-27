@@ -12,6 +12,8 @@ apps/
   web/       PWA React + Vite + TypeScript strict (app.rawiaudio.com, Cloudflare)
   api/       API Go (api.rawiaudio.com, Docker Compose sur le VPS OVH)
   mobile/    plus tard : Expo (React Native)
+packages/
+  shared/    code TypeScript commun à web/ et mobile/ : core, client HTTP, stockages (ADR-0008)
 contracts/
   openapi.yaml   contrat de l'API, source de vérité entre api/ et web/
 ops/         stack Docker Compose de Rawi (API + Postgres), scripts de sauvegarde, runbooks/
@@ -40,20 +42,25 @@ docs/adr/    décisions d'architecture
 - Configuration par variables d'environnement. Aucun secret dans le repo ni dans les logs.
 - Tests : `testing` de la stdlib. Avant chaque commit : `go vet ./...`, `go test -race ./...`, `govulncheck ./...`.
 
+## Code partagé (`packages/shared`)
+- Clean Architecture (ADR-0004), importée par `@rawiaudio/shared/<dossier>/<fichier>.ts` :
+  - `core/domain` : entités et règles métier pures ; `core/ports` : interfaces vers l'extérieur ; `core/useCases` : une fonction par action.
+  - `http/` : client de l'API et implémentation de `EpisodeRepository` (fetch, présent partout).
+  - `storage/` : stockages clé-valeur sur une interface `Storage` (`localStorage` du navigateur, ou celui d'`expo-sqlite`).
+  - `ui/` : React sans DOM, commun aux deux clients : contexte des cas d'usage, hooks, textes (`i18n/`), formats. N'importe que `core` et `react`.
+  - `core` n'importe rien hors de `core`, ni aucun paquet npm. `src/architecture.test.ts` le vérifie.
+- Fabriques de fonctions plutôt que classes (`erasableSyntaxOnly` : Node lance les tests sans compiler).
+- Tests : `node --test` (Node lit le TypeScript), sur les modules purs. Pas de Vitest (trop de dépendances).
+- Installation : `npm ci --ignore-scripts` à la racine (espaces de travail npm, un seul lockfile).
+
 ## PWA (`apps/web`)
 - React + Vite + TypeScript strict. Composants fonctionnels.
-- Clean Architecture (ADR-0004), dans `src/` :
-  - `core/domain` : entités et règles métier pures ; `core/ports` : interfaces vers l'extérieur ; `core/useCases` : une fonction par action.
-  - `infra/` : implémente les ports (`http/`, puis `audio/`, `offline/`).
-  - `ui/` : React (`pages/`, `components/`, `hooks/`, `i18n/`).
-  - `main.tsx` : seul point d'assemblage.
-  - `core` n'importe rien hors de `core` ; `ui` et `infra` ne s'importent pas. `src/architecture.test.ts` le vérifie.
-  - Fabriques de fonctions plutôt que classes (`erasableSyntaxOnly` : Node lance les tests sans compiler).
-- Tests : `node --test` (Node lit le TypeScript), sur les modules purs. Pas de Vitest (trop de dépendances).
+- Ce qui lui est propre : `infra/audio`, `infra/offline` (service worker, Cache API), `ui/`, et `main.tsx`, seul point d'assemblage.
+- `ui` et `infra` ne s'importent pas, et ne prennent du code partagé que `core` (plus `ui` du partagé, pour `ui`). `src/architecture.test.ts` le vérifie.
 - Service worker et manifest écrits à la main (pas de `vite-plugin-pwa` : trop de dépendances via workbox).
 - Audio : un seul élément `<audio>`, jamais Web Audio. Gestionnaires Media Session enregistrés dans l'événement `playing`.
 - Hors ligne : cache par identifiant d'épisode, jamais par URL (les URLs signées changent). Réponses 206 depuis le cache pour les requêtes Range.
-- Types de l'API alignés sur `contracts/openapi.yaml` (outil de génération à choisir ; en attendant, types écrits à la main dans `src/infra/http/types.ts`, traduits en entités de `core/domain` par `infra/http`).
+- Types de l'API alignés sur `contracts/openapi.yaml` (outil de génération à choisir ; en attendant, types écrits à la main dans `packages/shared/src/http/types.ts`, traduits en entités de `core/domain` par `http/`).
 
 ## Audio
 - Cloudflare R2, bucket privé, juridiction EU. Clés : `<langue>/<numéro>-<slug>/audio-128.mp3`.
@@ -62,8 +69,9 @@ docs/adr/    décisions d'architecture
 
 ## Dépendances (règle de Salim)
 - Jamais de bibliothèque qui a elle-même plus de 3 dépendances. Comptage : mainteneurs tiers dans l'arbre, hors dépendances de test et modules `golang.org/x`.
-- La plateforme (Go, Node, Vite, React, Expo) n'entre pas dans ce comptage ; tout ce qu'on ajoute par-dessus, si.
+- La plateforme (Go, Node, Vite, React, React Native, Expo et ses modules officiels `expo-*`, avec ce qu'exige `expo-router`) n'entre pas dans ce comptage ; tout ce qu'on ajoute par-dessus, si (ADR-0008).
 - Avant tout ajout : demander, montrer le compte de dépendances, justifier. Versions épinglées, lockfile commité, `npm ci --ignore-scripts`.
+- Versions de plus de 15 jours, dépendances indirectes comprises : installer ou mettre à jour avec `npm install --ignore-scripts --before="$(date -u -d '15 days ago' +%FT%TZ)"` (npm 10 ignore `min-release-age`).
 - Déjà validées : `pgx` v5. Plus tard : `stripe-go`.
 
 ## Sécurité (non négociable)

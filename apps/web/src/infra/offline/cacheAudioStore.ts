@@ -1,4 +1,4 @@
-import type { OfflineAudioStore } from '../../core/ports/offlineAudioStore.ts'
+import type { OfflineAudioStore } from '@rawiaudio/shared/core/ports/offlineAudioStore.ts'
 
 /** Même nom que dans public/sw.js, qui sert ces fichiers au lecteur. */
 const AUDIO_CACHE = 'rawi-audio-v1'

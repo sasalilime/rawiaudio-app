@@ -1,6 +1,6 @@
-import type { EpisodeSummary } from '../../core/domain/episode.ts'
-import { fr } from '../i18n/fr.ts'
-import { useDownloads } from '../hooks/useDownloads.ts'
+import type { EpisodeSummary } from '@rawiaudio/shared/core/domain/episode.ts'
+import { fr } from '@rawiaudio/shared/ui/i18n/fr.ts'
+import { useDownloads } from '@rawiaudio/shared/ui/hooks/useDownloads.ts'
 import { useInstallHint } from '../hooks/useInstallHint.ts'
 
 /** Télécharger un épisode pour l'écouter sans connexion, suivre la progression, ou le supprimer. */

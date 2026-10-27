@@ -1,0 +1,12 @@
+{
+  "name": "rawiaudio-app",
+  "private": true,
+  "workspaces": [
+    "packages/shared",
+    "apps/web"
+  ],
+  "scripts": {
+    "typecheck": "npm run typecheck --workspaces",
+    "test": "npm test --workspaces"
+  }
+}

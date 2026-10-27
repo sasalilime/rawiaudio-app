@@ -1,7 +1,7 @@
-import type { SeriesOverview } from '../../core/domain/catalog.ts'
-import { formatDuration } from '../format.ts'
-import { fr } from '../i18n/fr.ts'
-import { useHistory } from '../hooks/useHistory.ts'
+import type { SeriesOverview } from '@rawiaudio/shared/core/domain/catalog.ts'
+import { formatDuration } from '@rawiaudio/shared/ui/format.ts'
+import { fr } from '@rawiaudio/shared/ui/i18n/fr.ts'
+import { useHistory } from '@rawiaudio/shared/ui/hooks/useHistory.ts'
 import { Link } from '../navigation.tsx'
 import { seriesPath } from '../router.ts'
 

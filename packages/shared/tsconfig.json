@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "es2023",
+    // dom : fetch, Response, AbortSignal et Storage, présents aussi dans React Native et dans Node.
+    "lib": ["es2023", "dom"],
+    "module": "esnext",
+    "jsx": "react-jsx",
+    "moduleResolution": "bundler",
+    "types": [],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noEmit": true,
+    // Imports avec l'extension .ts : Node les exige pour lancer les tests sans outil.
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    // Node retire les types sans compiler : pas d'enum, de namespace ni de propriété dans un constructeur.
+    "erasableSyntaxOnly": true,
+    "skipLibCheck": true
+  },
+  "include": ["src"],
+  // Tests vérifiés à part, avec les types de Node : tsconfig.test.json.
+  "exclude": ["src/**/*.test.ts"]
+}

@@ -1,5 +1,5 @@
-import type { Episode, EpisodeSummary } from '../../core/domain/episode.ts'
-import type { CatalogCache } from '../../core/ports/catalogCache.ts'
+import type { Episode, EpisodeSummary } from '../core/domain/episode.ts'
+import type { CatalogCache } from '../core/ports/catalogCache.ts'
 
 const listKey = (lang: string) => `rawi:catalog:${lang}`
 const episodeKey = (id: string) => `rawi:episode:${id}`

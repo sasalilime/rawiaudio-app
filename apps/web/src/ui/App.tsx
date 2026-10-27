@@ -1,4 +1,4 @@
-import { fr } from './i18n/fr.ts'
+import { fr } from '@rawiaudio/shared/ui/i18n/fr.ts'
 import { CatalogPage } from './pages/CatalogPage.tsx'
 import { EpisodePage } from './pages/EpisodePage.tsx'
 import { SeriesPage } from './pages/SeriesPage.tsx'

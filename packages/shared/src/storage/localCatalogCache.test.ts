@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import type { Episode } from '../../core/domain/episode.ts'
+import type { Episode } from '../core/domain/episode.ts'
 import { createLocalCatalogCache } from './localCatalogCache.ts'
 
 function memoryStorage(): Storage {

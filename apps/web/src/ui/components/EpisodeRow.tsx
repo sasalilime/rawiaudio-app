@@ -1,8 +1,8 @@
-import type { EpisodeSummary } from '../../core/domain/episode.ts'
-import { formatDuration } from '../format.ts'
-import { fr } from '../i18n/fr.ts'
-import { useDownloads } from '../hooks/useDownloads.ts'
-import { useHistory } from '../hooks/useHistory.ts'
+import type { EpisodeSummary } from '@rawiaudio/shared/core/domain/episode.ts'
+import { formatDuration } from '@rawiaudio/shared/ui/format.ts'
+import { fr } from '@rawiaudio/shared/ui/i18n/fr.ts'
+import { useDownloads } from '@rawiaudio/shared/ui/hooks/useDownloads.ts'
+import { useHistory } from '@rawiaudio/shared/ui/hooks/useHistory.ts'
 import { Link } from '../navigation.tsx'
 import { episodePath } from '../router.ts'
 

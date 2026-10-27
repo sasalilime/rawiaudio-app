@@ -1,12 +1,12 @@
-import { findSeries } from '../../core/domain/catalog.ts'
-import { formatDuration } from '../format.ts'
-import { fr } from '../i18n/fr.ts'
+import { findSeries } from '@rawiaudio/shared/core/domain/catalog.ts'
+import { formatDuration } from '@rawiaudio/shared/ui/format.ts'
+import { fr } from '@rawiaudio/shared/ui/i18n/fr.ts'
 import { DownloadSeriesButton } from '../components/DownloadSeriesButton.tsx'
 import { EpisodeRow } from '../components/EpisodeRow.tsx'
 import { PageTitle } from '../components/PageTitle.tsx'
 import { PlayButton } from '../components/PlayButton.tsx'
-import { useCatalog } from '../hooks/useCatalog.ts'
-import { useHistory } from '../hooks/useHistory.ts'
+import { useCatalog } from '@rawiaudio/shared/ui/hooks/useCatalog.ts'
+import { useHistory } from '@rawiaudio/shared/ui/hooks/useHistory.ts'
 import { Link } from '../navigation.tsx'
 
 /** Une série : ses parties dans l'ordre, la prochaine à écouter, et le téléchargement de l'ensemble. */
@@ -57,7 +57,7 @@ export function SeriesPage({ id }: { id: string }) {
         {next?.series && (
           <>
             <p className="series-next">
-              {fr.partNumber(next.series.part)} : {next.title}
+              {fr.partWithTitle(next.series.part, next.title)}
             </p>
             <PlayButton episode={next} />
           </>

@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { NotFoundError, UnavailableError } from '../../core/domain/errors.ts'
+import { NotFoundError, UnavailableError } from '../core/domain/errors.ts'
 import { createApi } from './apiClient.ts'
 import { createHttpEpisodeRepository } from './episodeRepository.ts'
 

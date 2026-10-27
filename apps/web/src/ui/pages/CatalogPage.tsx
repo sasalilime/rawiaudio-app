@@ -1,9 +1,9 @@
-import { fr } from '../i18n/fr.ts'
+import { fr } from '@rawiaudio/shared/ui/i18n/fr.ts'
 import { EpisodeRow } from '../components/EpisodeRow.tsx'
 import { PageTitle } from '../components/PageTitle.tsx'
 import { RandomButton } from '../components/RandomButton.tsx'
 import { SeriesRow } from '../components/SeriesRow.tsx'
-import { useCatalog } from '../hooks/useCatalog.ts'
+import { useCatalog } from '@rawiaudio/shared/ui/hooks/useCatalog.ts'
 
 export function CatalogPage() {
   const [state, retry] = useCatalog('fr')

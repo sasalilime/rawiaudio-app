@@ -1,15 +1,15 @@
-import { findSeries, nextPart } from '../../core/domain/catalog.ts'
-import type { Episode } from '../../core/domain/episode.ts'
-import { NotFoundError } from '../../core/domain/errors.ts'
-import { formatDuration } from '../format.ts'
-import { fr } from '../i18n/fr.ts'
-import { useCatalog } from '../hooks/useCatalog.ts'
+import { findSeries, nextPart } from '@rawiaudio/shared/core/domain/catalog.ts'
+import type { Episode } from '@rawiaudio/shared/core/domain/episode.ts'
+import { NotFoundError } from '@rawiaudio/shared/core/domain/errors.ts'
+import { formatDuration } from '@rawiaudio/shared/ui/format.ts'
+import { fr } from '@rawiaudio/shared/ui/i18n/fr.ts'
+import { useCatalog } from '@rawiaudio/shared/ui/hooks/useCatalog.ts'
 import { Link } from '../navigation.tsx'
 import { episodePath, seriesPath } from '../router.ts'
 import { PageTitle } from '../components/PageTitle.tsx'
 import { DownloadButton } from '../components/DownloadButton.tsx'
 import { PlayButton } from '../components/PlayButton.tsx'
-import { useEpisode } from '../hooks/useEpisode.ts'
+import { useEpisode } from '@rawiaudio/shared/ui/hooks/useEpisode.ts'
 
 export function EpisodePage({ id }: { id: string }) {
   const [state, retry] = useEpisode(id)

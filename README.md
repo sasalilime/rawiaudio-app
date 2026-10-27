@@ -10,6 +10,7 @@ PWA, API, contrat OpenAPI et stack ops de Rawi.
 | `apps/web/` | PWA React + Vite + TypeScript (app.rawiaudio.com, Cloudflare) |
 | `apps/api/` | API Go (api.rawiaudio.com, Docker Compose sur le VPS) |
 | `apps/mobile/` | plus tard : Expo (React Native) |
+| `packages/shared/` | code TypeScript commun à la PWA et à l'app mobile |
 | `contracts/` | `openapi.yaml`, contrat entre l'API et la PWA |
 | `ops/` | stack Docker Compose de Rawi, sauvegardes, `runbooks/` |
 | `spikes/` | prototypes jetables |
@@ -59,8 +60,8 @@ Les images sont épinglées par digest d'index (`tag@sha256:…`) : elles ne re�
 ### Démarrer en local
 L'API doit tourner sur le port 8080 (voir plus haut) : en dev, Vite lui relaie les appels à `/api`.
 ```bash
+npm ci --ignore-scripts    # à la racine : PWA et code partagé
 cd apps/web
-npm ci --ignore-scripts
 npm run dev    # http://localhost:5180
 ```
 Le service worker (hors ligne) ne tourne que dans l'appli construite, à la même adresse :
@@ -71,10 +72,15 @@ En revenant à `npm run dev`, l'appli retire elle-même ce service worker.
 
 ### Avant chaque commit
 ```bash
-cd apps/web
-npm run typecheck
+npm run typecheck    # à la racine : tous les paquets TypeScript
 npm test
-npm run build
+npm run build -w apps/web
+```
+
+## Ajouter ou mettre à jour une dépendance npm
+`--before` limite toute l'arborescence, dépendances indirectes comprises, aux versions de plus de 15 jours. Le réglage `min-release-age` de `~/.npmrc` n'est pas appliqué par npm 10.
+```bash
+npm install --ignore-scripts --before="$(date -u -d '15 days ago' +%FT%TZ)"
 ```
 
 ## Production (`ops/`)

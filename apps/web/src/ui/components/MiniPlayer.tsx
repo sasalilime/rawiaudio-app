@@ -1,8 +1,8 @@
-import type { PlaybackStatus } from '../../core/useCases/playbackSession.ts'
+import type { PlaybackStatus } from '@rawiaudio/shared/core/useCases/playbackSession.ts'
 import { episodePath } from '../router.ts'
-import { formatClock } from '../format.ts'
-import { fr } from '../i18n/fr.ts'
-import { usePlayback } from '../hooks/usePlayback.ts'
+import { formatClock } from '@rawiaudio/shared/ui/format.ts'
+import { fr } from '@rawiaudio/shared/ui/i18n/fr.ts'
+import { usePlayback } from '@rawiaudio/shared/ui/hooks/usePlayback.ts'
 import { Link } from '../navigation.tsx'
 
 const SKIP_SECONDS = 15

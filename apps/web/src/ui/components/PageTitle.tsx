@@ -1,5 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react'
-import { fr } from '../i18n/fr.ts'
+import { fr } from '@rawiaudio/shared/ui/i18n/fr.ts'
 
 /**
  * Titre de page : met à jour l'onglet et reçoit le focus à chaque changement de page,
