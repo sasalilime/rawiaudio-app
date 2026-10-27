@@ -1,0 +1,37 @@
+# API de Rawi Audio sur le VPS (ADR-0011). Installé par `make deploy-api` dans /etc/systemd/system/.
+[Unit]
+Description=API de Rawi Audio (Go + Postgres)
+After=network-online.target postgresql.service
+Wants=network-online.target postgresql.service
+
+[Service]
+Type=simple
+# Jamais root : l'utilisateur système rawi, que Postgres reconnaît sans mot de passe (authentification « peer »).
+User=rawi
+Group=rawi
+WorkingDirectory=/var/www/rawi
+ExecStart=/var/www/rawi/rawi-api
+# Au démarrage, l'API applique les migrations : si Postgres n'est pas encore prêt, elle s'arrête et repart 5 s plus tard.
+Restart=always
+RestartSec=5
+# Plafond mémoire (l'API en utilise quelques dizaines de Mo) : si elle déraille, elle seule redémarre.
+MemoryMax=512M
+Environment=HOST=127.0.0.1
+Environment=PORT=8100
+# Socket local de Postgres, sans mot de passe : rien de secret ici.
+Environment=DATABASE_URL=postgres://rawi@/rawi?host=/var/run/postgresql
+# Token R2 et origine CORS : fichier lisible par root seul (chmod 600), jamais dans git.
+EnvironmentFile=/etc/rawi.env
+
+# Durcissement : l'API ne lit que son binaire et n'écrit nulle part.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+RestrictNamespaces=true
+CapabilityBoundingSet=
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged
+
+[Install]
+WantedBy=multi-user.target

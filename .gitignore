@@ -17,6 +17,7 @@ apps/mobile/android/
 
 # Go
 apps/api/bin/
+/build/
 *.test
 *.out
 

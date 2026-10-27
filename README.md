@@ -104,8 +104,9 @@ npm install --ignore-scripts --before="$(date -u -d '15 days ago' +%FT%TZ)"
 
 ## Production (`ops/`)
 
-Décisions : [ADR-0005](docs/adr/0005-mise-en-ligne.md). Procédures : [`ops/runbooks/`](ops/runbooks/).
-- `ops/compose.yaml` : la stack de production (API et Postgres), derrière Caddy sur le VPS.
+Décisions : [ADR-0005](docs/adr/0005-mise-en-ligne.md), [ADR-0011](docs/adr/0011-mise-en-ligne-sur-le-socle-du-vps.md). Procédures : [`ops/runbooks/`](ops/runbooks/), dont la première installation (`installer-sur-le-vps.md`).
+- L'API tourne sur le VPS en service systemd (`ops/systemd/rawi-api.service`), derrière Caddy (`ops/rawi.caddy`), avec Postgres installé sur le VPS. Pas de Docker en production.
+- Mettre en ligne une nouvelle version de l'API, tout étant commité : `make deploy-api`, à la racine.
 - `ops/backup.sh` et `ops/systemd/` : sauvegarde de la base chaque nuit.
 - `ops/episodes/` : SQL de saisie des épisodes, en attendant l'import depuis le studio.
 

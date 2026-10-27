@@ -1,0 +1,8 @@
+# API de Rawi derrière le Caddy du VPS (ADR-0011). Installé par `make deploy-api` dans /etc/caddy/sites/.
+# Caddy obtient et renouvelle le certificat HTTPS tout seul (Let's Encrypt) : l'enregistrement DNS
+# api.rawiaudio.com doit être en « DNS only » chez Cloudflare.
+api.rawiaudio.com {
+	# L'API n'écoute que sur la machine (127.0.0.1:8100), Caddy fait le HTTPS devant.
+	reverse_proxy 127.0.0.1:8100
+	encode zstd gzip
+}

@@ -7,6 +7,7 @@ import (
 
 // setValidEnv pose une configuration complète ; chaque cas retire ensuite ce qu'il teste.
 func setValidEnv(t *testing.T) {
+	t.Setenv("HOST", "")
 	t.Setenv("PORT", "")
 	t.Setenv("DATABASE_URL", "postgres://localhost/rawi")
 	t.Setenv("R2_ENDPOINT", "https://compte.eu.r2.cloudflarestorage.com")
@@ -26,6 +27,9 @@ func TestLoadConfig(t *testing.T) {
 		}
 		if cfg.Port != "8080" {
 			t.Errorf("Port = %q, attendu %q", cfg.Port, "8080")
+		}
+		if cfg.Host != "" {
+			t.Errorf("Host = %q, attendu vide (toutes les interfaces)", cfg.Host)
 		}
 		if cfg.R2Bucket != "rawi-audio" {
 			t.Errorf("R2Bucket = %q, attendu rawi-audio", cfg.R2Bucket)

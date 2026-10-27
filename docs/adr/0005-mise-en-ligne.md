@@ -1,6 +1,6 @@
 # ADR-0005 : Mise en ligne de l'API et de la PWA
 
-**Statut :** Accepté (préparé le 26 octobre 2026 ; socle du VPS encore à installer)
+**Statut :** Remplacé en partie par l'ADR-0011 (27 octobre 2026) : plus de Docker en production, l'API et Postgres suivent la convention du socle du VPS. Le reste (Caddy, DNS, PWA, CORS, principe des sauvegardes, publication) tient toujours.
 **Date :** 26 octobre 2026
 **Décideur :** Salim
 

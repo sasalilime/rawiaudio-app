@@ -3,6 +3,8 @@
 Procédure à la main, en attendant l'import depuis `rawiaudio-studio` (ADR à écrire).
 Un épisode n'apparaît dans l'appli qu'une fois publié : `published_at` renseigné et atteint.
 
+Tout se lance depuis le poste de dev, à la racine du repo. Le SQL part sur le VPS par SSH : `ssh vps '…'` lance la commande sur le serveur, et lui passe ce qu'on écrit après `<<'SQL'`. `sudo -u rawi psql` s'y connecte à la base sous l'utilisateur `rawi`, sans mot de passe (ADR-0011).
+
 ## 1. Le fichier audio (depuis le poste de dev)
 Format attendu : MP3 à 128 kbit/s, mono. Vérification :
 ```bash
@@ -31,10 +33,10 @@ npx wrangler@4.142.0 r2 object put rawi-images/fr/005-<slug>/image-16x9.webp --f
 ```
 - Une image déposée ne se remplace jamais sous la même clé : téléphones et cache de Cloudflare la gardent un an. Pour la changer, la déposer sous `image-16x9-2.webp`, puis mettre la base à jour : `UPDATE episodes SET image_key = 'fr/005-<slug>/image-16x9-2.webp' WHERE id = 'fr-005'`.
 
-## 3. L'épisode en base, non publié (sur le VPS, depuis `ops/`)
+## 3. L'épisode en base, non publié
 `image_key` : la clé de l'étape 2, ou `NULL` sans illustration.
 ```bash
-docker compose exec -T db psql -U rawi -d rawi -v ON_ERROR_STOP=1 <<'SQL'
+ssh vps 'sudo -u rawi psql -d rawi -v ON_ERROR_STOP=1' <<'SQL'
 INSERT INTO episodes (id, lang, number, slug, title, reference, duration_seconds, series_id, image_key)
 VALUES ('fr-005', 'fr', 5, '<slug>', '<Titre>', 'Sourate <…>, versets <…>', <durée en secondes>, NULL, 'fr/005-<slug>/image-16x9.webp');
 SQL
@@ -45,9 +47,9 @@ SQL
 
 ## 4. Le ou les thèmes
 Un épisode peut entrer dans plusieurs thèmes ; sans thème, il s'affiche dans « Autres histoires ».
-Liste des thèmes : `docker compose exec -T db psql -U rawi -d rawi -c "SELECT id, title FROM themes ORDER BY position"`.
+Liste des thèmes : `echo "SELECT id, title FROM themes ORDER BY position" | ssh vps 'sudo -u rawi psql -d rawi'`.
 ```bash
-docker compose exec -T db psql -U rawi -d rawi -v ON_ERROR_STOP=1 <<'SQL'
+ssh vps 'sudo -u rawi psql -d rawi -v ON_ERROR_STOP=1' <<'SQL'
 INSERT INTO episode_themes (episode_id, theme_id, lang) VALUES ('fr-005', 'fr-prophetes', 'fr');
 SQL
 ```
@@ -55,7 +57,7 @@ SQL
 ## 5. Sources et résumé, recopiés de la fiche validée du studio
 Jamais rédigés ailleurs. Les sources sont des liens Shamela de la matrice `studio/docs/sources.md` : la base refuse tout autre lien.
 ```bash
-docker compose exec -T db psql -U rawi -d rawi -v ON_ERROR_STOP=1 <<'SQL'
+ssh vps 'sudo -u rawi psql -d rawi -v ON_ERROR_STOP=1' <<'SQL'
 BEGIN;
 INSERT INTO episode_sources (episode_id, position, label, url) VALUES
     ('fr-005', 1, '<livre, tome, page>', 'https://shamela.ws/book/<livre>/<page>');
@@ -67,7 +69,7 @@ SQL
 ## 6. Publication
 Date et heure en UTC ; une date future programme la sortie.
 ```bash
-docker compose exec -T db psql -U rawi -d rawi -c "UPDATE episodes SET published_at = '2026-11-06 06:00:00+00' WHERE id = 'fr-005'"
+echo "UPDATE episodes SET published_at = '2026-11-06 06:00:00+00' WHERE id = 'fr-005'" | ssh vps 'sudo -u rawi psql -d rawi -v ON_ERROR_STOP=1'
 ```
 
 ## 7. Vérification
@@ -81,7 +83,11 @@ curl -sI "https://media.rawiaudio.com/fr/005-<slug>/image-16x9.webp" | grep -iE 
 - La troisième doit donner `200`, `image/webp` et le `cache-control` d'un an. Relancée, elle doit montrer `cf-cache-status: HIT` : l'image vient du cache de Cloudflare, pas de R2.
 
 ## Épisodes 1 à 4
-`ops/episodes/0001-episodes-1-a-4.sql` les crée non publiés (étape 3), d'après le site, puis `0002-themes.sql` crée les 10 thèmes et les y range (étape 4).
+`ops/episodes/0001-episodes-1-a-4.sql` les crée non publiés (étape 3), d'après le site, puis `0002-themes.sql` crée les 10 thèmes et les y range (étape 4). Une seule fois, dans cet ordre :
+```bash
+ssh vps 'sudo -u rawi psql -d rawi -v ON_ERROR_STOP=1' < ops/episodes/0001-episodes-1-a-4.sql
+ssh vps 'sudo -u rawi psql -d rawi -v ON_ERROR_STOP=1' < ops/episodes/0002-themes.sql
+```
 - Audio sur R2 au 26/10/2026 : épisodes 1, 2 et 3. Épisode 4 : choisir entre `younous_ep_4.mp3` (128 kbit/s, mono) et `younous_ep_4_ambiance.mp3` (192 kbit/s, stéréo, à réencoder).
 - Restent les étapes 5 et 6 pour chacun, avec les fiches du studio.
 - Illustrations : à demander au studio, sans texte (étape 2), puis `UPDATE episodes SET image_key = …` pour chacun.

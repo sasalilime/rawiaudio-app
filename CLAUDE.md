@@ -113,9 +113,10 @@ docs/adr/    décisions d'architecture
 Une tranche à la fois. Pas de fonctionnalité hors de la tranche en cours.
 
 ## Ops (VPS OVH)
-- Une stack Docker Compose par site, un seul Caddy en frontal (hors de ce repo), un Postgres par stack, un réseau Docker par stack, des limites mémoire.
-- Le VPS héberge aussi l'Institut Al-Ihsan : ne jamais toucher à sa stack.
-- La stack de Rawi est décrite dans `ops/`. Les procédures d'incident vont dans `ops/runbooks/`.
+- Convention du socle (ADR-0011), sans Docker : par site, un utilisateur système, un service systemd plafonné en mémoire, un fichier Caddy dans `/etc/caddy/sites/`, des secrets dans `/etc/<site>.env`. Un seul Caddy en frontal (hors de ce repo).
+- Postgres installé sur le VPS ; Rawi a son rôle et sa base `rawi`, connexion par le socket local sans mot de passe.
+- Le VPS héberge d'autres sites (alfurqan.fr, et plus tard l'Institut) : ne jamais toucher à leurs fichiers, services ni bases.
+- Ce qui concerne Rawi est dans `ops/`, déployé par `make deploy-api`. Les procédures vont dans `ops/runbooks/`.
 - Pour l'ops, Salim tape les commandes ; Claude Code explique le pourquoi.
 
 ## Conventions

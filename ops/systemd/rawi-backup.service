@@ -1,9 +1,17 @@
-# Sauvegarde de la base de Rawi, lancée par rawi-backup.timer. Installation : ops/runbooks/sauvegardes.md.
+# Sauvegarde de la base de Rawi, lancée par rawi-backup.timer. Installé par `make deploy-api`.
+# Procédure : ops/runbooks/sauvegardes.md.
 [Unit]
 Description=Sauvegarde de la base de Rawi
-Requires=docker.service
-After=docker.service
+After=postgresql.service
 
 [Service]
 Type=oneshot
-ExecStart=/srv/rawiaudio-app/ops/backup.sh
+# L'utilisateur rawi : Postgres le reconnaît sans mot de passe, et lui seul lit les sauvegardes.
+User=rawi
+Group=rawi
+ExecStart=/var/www/rawi/backup.sh
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/backups/rawi

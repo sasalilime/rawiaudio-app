@@ -10,6 +10,8 @@ import (
 
 // config regroupe les réglages lus dans l'environnement au démarrage.
 type config struct {
+	// Adresse d'écoute : vide = toutes les interfaces (dev, Docker) ; 127.0.0.1 sur le VPS, derrière Caddy.
+	Host              string
 	Port              string
 	DatabaseURL       string // contient le mot de passe : ne jamais le logger
 	R2Endpoint        string // https://<compte>.eu.r2.cloudflarestorage.com (ADR-0003)
@@ -24,6 +26,7 @@ type config struct {
 
 func loadConfig() (config, error) {
 	cfg := config{
+		Host:              os.Getenv("HOST"),
 		Port:              os.Getenv("PORT"),
 		DatabaseURL:       os.Getenv("DATABASE_URL"),
 		R2Endpoint:        os.Getenv("R2_ENDPOINT"),
