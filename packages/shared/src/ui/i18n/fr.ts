@@ -56,6 +56,11 @@ export const fr = {
   removeDownload: 'Supprimer le téléchargement',
   downloadError: 'Le téléchargement n’a pas abouti. Vérifiez la connexion, puis réessayez.',
   retryDownload: 'Réessayer le téléchargement',
+  about: 'À propos',
+  aboutText: 'Rawi Audio raconte aux familles les histoires du Coran et des Prophètes. Chaque épisode donne ses sources.',
+  website: 'Le site de Rawi Audio',
+  legalNotice: 'Mentions légales',
+  writeToUs: 'Nous écrire',
   installHint:
     'Pour écouter sans connexion, ajoutez d’abord Rawi à l’écran d’accueil\u00A0: touchez Partager, puis «\u00A0Sur l’écran d’accueil\u00A0». Les téléchargements faits dans Safari n’apparaissent pas dans l’appli.',
 } as const

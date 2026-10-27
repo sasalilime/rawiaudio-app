@@ -1,4 +1,5 @@
 import { Fragment } from 'react'
+import { Link } from 'expo-router'
 import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { fr } from '@rawiaudio/shared/ui/i18n/fr.ts'
@@ -63,6 +64,10 @@ export default function CatalogScreen() {
           ))}
         </>
       )}
+
+      <Link href="/about" style={[text.link, styles.about]}>
+        {fr.about}
+      </Link>
     </ScrollView>
   )
 }
@@ -74,4 +79,6 @@ const styles = StyleSheet.create({
   tagline: { color: colors.ambre, fontFamily: fonts.titre, fontSize: 21, lineHeight: 32, textAlign: 'center', maxWidth: 320 },
   loading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, paddingVertical: 24 },
   latestTitle: { color: colors.ambre },
+  // 26 de hauteur de ligne + 2 × 11 : la cible de 48 points.
+  about: { alignSelf: 'center', marginTop: 32, paddingVertical: 11 },
 })
