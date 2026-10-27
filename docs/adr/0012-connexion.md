@@ -97,6 +97,11 @@ sessions       (token_hash PRIMARY KEY, account_id → accounts ON DELETE CASCAD
   - l'e-mail part pendant la requête, en 10 secondes au plus, et non en arrière-plan : une panne d'envoi répond 500 et le client peut réessayer ;
   - tests contre la vraie base : usage unique, expiration, 5 essais même en rafale, limites, sessions prolongées, suppression du compte, et A ne voit jamais B ;
   - essai de bout en bout avec Mailpit.
+- Écrit le 27 octobre 2026 (étape 6) :
+  - code partagé : `AuthGateway` (cœur), `createAccountSession`, `createHttpAuthGateway` (cookie pour la PWA, jeton et `TokenStore` pour l'app), textes et messages d'erreur ;
+  - PWA : pages `/connexion` (le lien `#jeton=` attend un clic, puis le jeton disparaît de l'adresse et de l'historique) et `/compte`, lien « Mon compte » dans l'en-tête ;
+  - app : écrans de connexion (code seulement) et « Mon compte », jeton dans le trousseau avec `expo-secure-store` 58.0.2, en `AFTER_FIRST_UNLOCK` pour la lecture écran verrouillé. Le jeton suit une sauvegarde iCloud chiffrée vers un nouvel iPhone : la session continue après restauration (`AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY` l'empêcherait). Sur Android, le plugin retire le jeton de la sauvegarde automatique ;
+  - essayé dans Chrome sans écran contre l'API de dev et Mailpit (PWA) ; l'app n'a pas encore été vue sur un téléphone.
 - Les routes du catalogue restent publiques ; `routes.go` gagne un wrapper par niveau d'accès (`public`, `compte`), comme prévu par son commentaire.
 - Le client HTTP partagé passe `credentials: 'include'` côté PWA, et l'en-tête `Authorization` côté app.
 - Le CORS accepte `POST` et `DELETE`, les en-têtes `Content-Type` et `Authorization`, et les cookies, pour l'origine de la PWA seulement.
