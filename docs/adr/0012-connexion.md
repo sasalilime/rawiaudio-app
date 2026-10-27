@@ -127,6 +127,8 @@ Laissé, à trancher par Salim :
 - DMARC : passer de `p=none` à `p=quarantine` quand les rapports montrent que tous les e-mails légitimes passent. Avec `p=none`, un faux e-mail « connexion@rawiaudio.com » reste possible ;
 - aucun script tiers (Web Analytics, Zaraz) sur `app.rawiaudio.com` : il lirait le jeton du lien dans l'adresse.
 
+Ajouté ensuite : une politique de sécurité du contenu pour la PWA (`apps/web/public/_headers`) : seuls l'appli, l'API, R2 et `media.rawiaudio.com` sont admis, sans script en ligne. Un script injecté ne s'exécute pas et ne peut rien envoyer ailleurs ; un script tiers ajouté par Cloudflare serait bloqué. Essayé sur la PWA construite, sous cette politique : catalogue, lecture depuis R2, téléchargement, service worker, aucune violation.
+
 ## Ordre proposé (une étape, un « go »)
 1. Réponses aux questions, ADR accepté.
 2. Contrat OpenAPI des routes ci-dessus.

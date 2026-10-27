@@ -1,5 +1,17 @@
 # En-têtes HTTP des fichiers statiques sur Cloudflare (lu au déploiement, jamais servi).
 
+# Politique de sécurité du contenu (relecture de sécurité du 27/10/2026) : un script injecté ne s'exécute pas, et
+# ne peut rien envoyer ailleurs (jeton du lien de connexion, code tapé). Seules sources admises :
+#   - l'appli elle-même ('self') : scripts, styles, polices, service worker, audio téléchargé (/offline/) ;
+#   - l'API ; l'audio en ligne, par URL signée sur R2 ; les illustrations sur media.rawiaudio.com.
+# Aucun script ni style en ligne : Vite n'en produit pas. Un nouveau domaine se déclare ici, sinon il est bloqué.
+# frame-ancestors 'none' : personne ne peut afficher l'appli dans un cadre pour faire cliquer à l'insu.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' https://media.rawiaudio.com; media-src 'self' https://*.r2.cloudflarestorage.com; connect-src 'self' https://api.rawiaudio.com https://*.r2.cloudflarestorage.com https://media.rawiaudio.com; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: no-referrer
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+
 # Le service worker doit être revérifié à chaque visite : sinon une nouvelle version de l'appli tarde à arriver.
 /sw.js
   Cache-Control: no-cache
