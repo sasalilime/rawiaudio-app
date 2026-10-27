@@ -65,7 +65,8 @@ export const fr = {
   // Connexion (ADR-0012)
   account: 'Mon compte',
   signIn: 'Se connecter',
-  signInIntro: 'Recevez un code par e-mail, sans mot de passe. Un seul compte pour toute la famille.',
+  signInIntro:
+    'Un seul compte pour toute la famille\u00A0: les histoires écoutées vous suivent sur tous vos appareils. Pas de mot de passe, un code arrive par e-mail.',
   emailLabel: 'Adresse e-mail',
   sendCode: 'Recevoir le code',
   codeSentTo: (email: string) => `Un code à 6 chiffres vient de partir à ${email}. Il est valable 10 minutes.`,
