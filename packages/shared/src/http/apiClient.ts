@@ -75,8 +75,8 @@ export function createApi(baseUrl: string, fetchFn: typeof fetch = fetch, option
       getJson<AudioUrl>(`/episodes/${encodeURIComponent(id)}/audio`, signal),
 
     // Connexion (ADR-0012). Les réponses 202 et 204 n'ont pas de corps : rien à lire.
-    requestLogin: async (email: string) => {
-      await call('POST', '/auth/login', { email })
+    requestLogin: async (email: string, client: Client) => {
+      await call('POST', '/auth/login', { email, client })
     },
     verifyCode: (email: string, code: string, client: Client) =>
       postJson<SessionOpened>('/auth/code', { email, code, client }),

@@ -3,7 +3,7 @@
 openapi: 3.1.0
 info:
   title: API Rawi Audio
-  version: 0.3.0
+  version: 0.4.0
 servers:
   - url: https://api.rawiaudio.com
   - url: http://localhost:8080
@@ -122,7 +122,16 @@ paths:
               $ref: "#/components/schemas/LoginRequest"
       responses:
         "202":
-          description: Demande acceptée ; l'e-mail est remis au service d'envoi avant la réponse.
+          description: >
+            Demande acceptée ; l'e-mail est remis au service d'envoi avant la réponse. client "web" : l'e-mail contient
+            aussi un lien, et l'API pose un cookie de preuve sans lequel ce lien est refusé (il ne marche que dans ce
+            navigateur). client "app" : un code seulement, ni lien ni cookie.
+          headers:
+            Set-Cookie:
+              description: Seulement pour client "web".
+              schema:
+                type: string
+                example: __Host-rawi_login=…; Path=/; Max-Age=600; HttpOnly; Secure; SameSite=Lax
         "400":
           description: Corps invalide (`invalid_request`) ou adresse e-mail invalide (`invalid_email`).
           content:
@@ -177,6 +186,9 @@ paths:
       description: >
         Le lien ouvre https://app.rawiaudio.com/connexion#jeton=… ; c'est le bouton « Me connecter » de cette page
         qui appelle cette route, jamais l'ouverture du lien (les antivirus des messageries ouvrent les liens).
+        Le navigateur doit envoyer le cookie __Host-rawi_login posé par /auth/login : sans lui, invalid_code. Un lien
+        envoyé par quelqu'un d'autre ne connecte donc personne à son compte. Avec un en-tête Origin, client "app"
+        est refusé (invalid_request) : un navigateur ne reçoit jamais le jeton dans la réponse.
       security: []
       requestBody:
         required: true
@@ -392,10 +404,12 @@ components:
     LoginRequest:
       type: object
       additionalProperties: false
-      required: [email]
+      required: [email, client]
       properties:
         email:
           $ref: "#/components/schemas/Email"
+        client:
+          $ref: "#/components/schemas/Client"
     CodeRequest:
       type: object
       additionalProperties: false

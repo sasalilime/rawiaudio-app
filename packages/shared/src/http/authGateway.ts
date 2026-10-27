@@ -33,7 +33,8 @@ export function createHttpAuthGateway(api: Api, client: Client, tokens?: TokenSt
 
   return {
     async requestLogin(email) {
-      await translateErrors(api.requestLogin(email))
+      // web : l'API pose aussi un cookie de preuve, sans lequel le lien de l'e-mail ne marche pas ailleurs.
+      await translateErrors(api.requestLogin(email, client))
     },
     verifyCode: (email, code) => open(api.verifyCode(email, code, client)),
     verifyLink: (token) => open(api.verifyLink(token, client)),

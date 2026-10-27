@@ -82,7 +82,8 @@ export const fr = {
     minutes === null ? 'Trop de demandes. Réessayez plus tard.' : `Trop de demandes. Réessayez dans ${minutes}\u00A0min.`,
   authUnavailable: 'Connexion impossible pour le moment. Vérifiez la connexion, puis réessayez.',
   linkIntro: 'Vous avez ouvert le lien reçu par e-mail.',
-  linkInvalid: 'Ce lien ne fonctionne plus\u00A0: il a expiré ou a déjà servi. Demandez un nouveau code.',
+  linkInvalid:
+    'Ce lien ne fonctionne pas ici\u00A0: il ne marche qu’une fois, pendant 10\u00A0minutes, dans le navigateur où vous avez demandé le code. Utilisez le code reçu, ou demandez-en un nouveau.',
   signedInAs: (email: string) => `Connecté avec ${email}`,
   signOut: 'Me déconnecter',
   deleteAccount: 'Supprimer mon compte',

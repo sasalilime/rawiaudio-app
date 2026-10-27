@@ -113,3 +113,12 @@ test('suppression du compte : DELETE /account, puis le jeton est oublié', async
   assert.equal(requests[0]!.url, '/api/account')
   assert.equal(tokens.value, null)
 })
+
+test("la demande de code dit d'où elle vient : web pour la PWA, app pour l'app mobile", async () => {
+  for (const client of ['web', 'app'] as const) {
+    const { fn, requests } = fakeFetch(new Response(null, { status: 202 }))
+    const tokens = memoryTokens()
+    await createHttpAuthGateway(createApi('/api', fn), client, tokens).requestLogin('a@example.com')
+    assert.deepEqual(JSON.parse(String(requests[0]!.init?.body)), { email: 'a@example.com', client })
+  }
+})
