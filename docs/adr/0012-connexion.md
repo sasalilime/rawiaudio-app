@@ -1,6 +1,6 @@
 # ADR-0012 : Connexion par e-mail (lien et code)
 
-**Statut :** Accepté le 27 octobre 2026 (« oui pour tout »), sauf les questions 5 et 6 (migrations), encore ouvertes
+**Statut :** Accepté le 27 octobre 2026 (« oui pour tout »), sauf la question 5 (historique), encore ouverte
 **Date :** 27 octobre 2026
 **Décideur :** Salim
 
@@ -89,9 +89,14 @@ sessions       (token_hash PRIMARY KEY, account_id → accounts ON DELETE CASCAD
 3. ~~`expo-secure-store`~~ : oui.
 4. ~~Le partage~~ : la déconnexion et `DELETE /account` suffisent pour la tranche 6 ; « se déconnecter de tous les appareils » et la limite d'appareils se discutent avec l'abonnement.
 5. **Historique** (ADR-0007) : synchronisé dans cette tranche, ou juste après ? Sans lui, la tranche 6 ne change rien de visible tant que l'abonnement n'existe pas.
-6. ~~Le partage du travail~~ : accepté. Reste à dire **qui écrit les migrations**.
+6. ~~Le partage du travail~~ : Salim confie toute la tranche à Claude (« fais tout », 27 octobre 2026), migrations comprises ; il relit chaque diff.
 
 ## Conséquences
+- Écrit le 27 octobre 2026 (étapes 3 à 5) :
+  - migration `0006_auth.sql` ; `service.Auth` pour les règles, `repository.Auth` pour le SQL ; `internal/httpapi/auth.go` pour les routes et la session, et `ratelimit.go` pour la limite par IP ;
+  - l'e-mail part pendant la requête, en 10 secondes au plus, et non en arrière-plan : une panne d'envoi répond 500 et le client peut réessayer ;
+  - tests contre la vraie base : usage unique, expiration, 5 essais même en rafale, limites, sessions prolongées, suppression du compte, et A ne voit jamais B ;
+  - essai de bout en bout avec Mailpit.
 - Les routes du catalogue restent publiques ; `routes.go` gagne un wrapper par niveau d'accès (`public`, `compte`), comme prévu par son commentaire.
 - Le client HTTP partagé passe `credentials: 'include'` côté PWA, et l'en-tête `Authorization` côté app.
 - Le CORS accepte `POST` et `DELETE`, les en-têtes `Content-Type` et `Authorization`, et les cookies, pour l'origine de la PWA seulement.
