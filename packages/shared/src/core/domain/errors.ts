@@ -23,3 +23,30 @@ export class UnavailableError extends Error {
     this.name = 'UnavailableError'
   }
 }
+
+/** Adresse e-mail refusée (connexion, ADR-0012). */
+export class InvalidEmailError extends Error {
+  constructor(message: string, options?: ErrorOptions) {
+    super(message, options)
+    this.name = 'InvalidEmailError'
+  }
+}
+
+/** Code ou lien de connexion refusé : faux, expiré, déjà utilisé, ou essais épuisés. Le serveur ne dit pas lequel. */
+export class InvalidCodeError extends Error {
+  constructor(message: string, options?: ErrorOptions) {
+    super(message, options)
+    this.name = 'InvalidCodeError'
+  }
+}
+
+/** Trop de demandes ; retryAfterSeconds dit combien de temps attendre, quand le serveur le donne. */
+export class TooManyRequestsError extends Error {
+  readonly retryAfterSeconds: number | null
+
+  constructor(message: string, retryAfterSeconds: number | null, options?: ErrorOptions) {
+    super(message, options)
+    this.name = 'TooManyRequestsError'
+    this.retryAfterSeconds = retryAfterSeconds
+  }
+}

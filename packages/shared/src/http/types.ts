@@ -64,3 +64,16 @@ export type ErrorCode =
   | 'too_many_requests'
   | 'unavailable'
   | 'internal'
+
+/** web = la PWA (session en cookie), app = l'app mobile (jeton dans la réponse). */
+export type Client = 'web' | 'app'
+
+export interface Account {
+  email: string
+}
+
+export interface SessionOpened {
+  account: Account
+  /** Seulement pour client "app" : à garder dans le trousseau, à renvoyer dans Authorization. */
+  token?: string
+}

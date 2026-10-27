@@ -1,4 +1,5 @@
 import { createContext, useContext, type ReactNode } from 'react'
+import type { AccountSession } from '../core/useCases/accountSession.ts'
 import type { DownloadManager } from '../core/useCases/downloadManager.ts'
 import type { GetEpisode } from '../core/useCases/getEpisode.ts'
 import type { ListCatalog } from '../core/useCases/listCatalog.ts'
@@ -14,6 +15,7 @@ export interface UseCases {
   downloads: DownloadManager
   history: ListeningHistory
   pickRandom: PickRandomEpisode
+  account: AccountSession
 }
 
 const UseCasesContext = createContext<UseCases | null>(null)
