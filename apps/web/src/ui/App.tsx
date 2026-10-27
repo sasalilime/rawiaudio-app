@@ -4,10 +4,11 @@ import { EpisodePage } from './pages/EpisodePage.tsx'
 import { SeriesPage } from './pages/SeriesPage.tsx'
 import { SignInPage } from './pages/SignInPage.tsx'
 import { AccountPage } from './pages/AccountPage.tsx'
+import { AboutPage } from './pages/AboutPage.tsx'
 import { Link, useRoute } from './navigation.tsx'
 import { MiniPlayer } from './components/MiniPlayer.tsx'
 import { PageTitle } from './components/PageTitle.tsx'
-import { accountPath } from './router.ts'
+import { aboutPath, accountPath } from './router.ts'
 
 export function App() {
   const route = useRoute()
@@ -30,6 +31,7 @@ export function App() {
         {route.name === 'series' && <SeriesPage key={route.id} id={route.id} />}
         {route.name === 'signIn' && <SignInPage />}
         {route.name === 'account' && <AccountPage />}
+        {route.name === 'about' && <AboutPage />}
         {route.name === 'not-found' && (
           <>
             <PageTitle title={fr.pageNotFound}>{fr.pageNotFound}</PageTitle>
@@ -37,6 +39,11 @@ export function App() {
           </>
         )}
       </main>
+      <footer className="app-footer">
+        <Link href={aboutPath()} aria-current={route.name === 'about' ? 'page' : undefined}>
+          {fr.about}
+        </Link>
+      </footer>
       <MiniPlayer />
     </>
   )

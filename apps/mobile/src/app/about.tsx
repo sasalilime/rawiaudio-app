@@ -1,15 +1,12 @@
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { fr } from '@rawiaudio/shared/ui/i18n/fr.ts'
+import { links } from '@rawiaudio/shared/ui/links.ts'
 import { screen, text, TOUCH_TARGET } from '../ui/theme.ts'
 
-const SITE = 'https://rawiaudio.com'
-const CONTACT = 'contact@rawiaudio.com'
-
-// Le lien de confidentialité est exigé par Apple dans l'appli (règle 5.1.1(i), ADR-0013).
 const LINKS = [
-  { label: fr.website, url: SITE },
-  { label: fr.privacy, url: `${SITE}/confidentialite` },
-  { label: fr.legalNotice, url: `${SITE}/mentions-legales` },
+  { label: fr.website, url: links.site },
+  { label: fr.privacy, url: links.privacy },
+  { label: fr.legalNotice, url: links.legalNotice },
 ]
 
 /** Qui fait Rawi, et où le joindre : le site, la confidentialité, les mentions légales, l'adresse de contact. */
@@ -35,11 +32,11 @@ export default function AboutScreen() {
       {/* L'adresse reste lisible et copiable : sans appli de messagerie, le lien ne s'ouvre pas. */}
       <Pressable
         accessibilityRole="link"
-        onPress={() => Linking.openURL(`mailto:${CONTACT}`).catch(() => undefined)}
+        onPress={() => Linking.openURL(`mailto:${links.contact}`).catch(() => undefined)}
         style={styles.link}
       >
         <Text selectable style={text.link}>
-          {CONTACT}
+          {links.contact}
         </Text>
       </Pressable>
     </ScrollView>

@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { accountPath, episodePath, linkToken, parseRoute, seriesPath, signInPath } from './router.ts'
+import { aboutPath, accountPath, episodePath, linkToken, parseRoute, seriesPath, signInPath } from './router.ts'
 
 test('reconnaît les pages', () => {
   assert.deepEqual(parseRoute('/'), { name: 'catalog' })
@@ -26,6 +26,8 @@ test('construit le chemin d’un épisode', () => {
 test('construit les chemins de la connexion et du compte', () => {
   assert.deepEqual(parseRoute(signInPath()), { name: 'signIn' })
   assert.deepEqual(parseRoute(accountPath()), { name: 'account' })
+  assert.deepEqual(parseRoute(aboutPath()), { name: 'about' })
+  assert.deepEqual(parseRoute('/a-propos/'), { name: 'about' })
 })
 
 test('lit le jeton du lien de connexion dans le fragment', () => {

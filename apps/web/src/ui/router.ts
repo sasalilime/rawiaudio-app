@@ -6,12 +6,14 @@ export type Route =
   | { name: 'series'; id: string }
   | { name: 'signIn' }
   | { name: 'account' }
+  | { name: 'about' }
   | { name: 'not-found' }
 
 const EPISODE = /^\/episodes\/([a-z]{2}-\d{3})\/?$/
 const SERIES = /^\/series\/([a-z]{2}-[a-z0-9]+(?:-[a-z0-9]+)*)\/?$/
 const SIGN_IN = /^\/connexion\/?$/
 const ACCOUNT = /^\/compte\/?$/
+const ABOUT = /^\/a-propos\/?$/
 // Jeton du lien de l'e-mail (ADR-0012) : 32 octets en base64url sans remplissage, soit 43 caractères.
 const LINK_TOKEN = /^#jeton=([A-Za-z0-9_-]{43})$/
 
@@ -23,6 +25,7 @@ export function parseRoute(pathname: string): Route {
   if (series?.[1]) return { name: 'series', id: series[1] }
   if (SIGN_IN.test(pathname)) return { name: 'signIn' }
   if (ACCOUNT.test(pathname)) return { name: 'account' }
+  if (ABOUT.test(pathname)) return { name: 'about' }
   return { name: 'not-found' }
 }
 
@@ -40,6 +43,10 @@ export function signInPath(): string {
 
 export function accountPath(): string {
   return '/compte'
+}
+
+export function aboutPath(): string {
+  return '/a-propos'
 }
 
 /** Le jeton d'un lien de connexion (location.hash), ou null si le fragment n'en est pas un. */
