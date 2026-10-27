@@ -73,7 +73,10 @@ self.addEventListener('fetch', (event) => {
 async function networkFirst(event) {
   try {
     const response = await fetch(event.request)
-    if (response.ok) event.waitUntil(refreshShell(response.clone()))
+    // Seule une page HTML devient la coquille : un lien vers /manifest.webmanifest ou une icône la remplacerait sinon.
+    if (response.ok && response.headers.get('Content-Type')?.startsWith('text/html')) {
+      event.waitUntil(refreshShell(response.clone()))
+    }
     return response
   } catch {
     return (await caches.match('/', { cacheName: SHELL_CACHE })) ?? Response.error()

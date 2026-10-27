@@ -21,10 +21,12 @@ sudo install -d -o root -g rawi -m 750 /var/www/rawi
 sudo install -d -o rawi -g rawi -m 700 /var/backups/rawi
 sudo -u postgres createuser rawi
 sudo -u postgres createdb --owner=rawi --template=template0 --locale-provider=icu --icu-locale=fr-FR --locale=C.UTF-8 rawi
+sudo -u postgres psql -d rawi -c "REVOKE CONNECT, TEMPORARY ON DATABASE rawi FROM PUBLIC"
 ```
 - `useradd --system` : un utilisateur sans mot de passe ni connexion possible, qui ne sert qu'à faire tourner l'API.
 - `createuser rawi` : le rôle Postgres du même nom. Ubuntu laisse un utilisateur système se connecter à son rôle sans mot de passe (authentification « peer »), par le socket local : pas de mot de passe de base à garder.
 - `--icu-locale=fr-FR` : les textes de la base se trient en français.
+- `REVOKE … FROM PUBLIC` : par défaut, tout rôle Postgres peut se connecter à toute base. Les autres sites du VPS auront leur propre rôle : seul `rawi` (propriétaire) entre dans la base `rawi`.
 - Postgres n'écoute que sur la machine (réglage d'Ubuntu) : rien à ouvrir dans ufw.
 
 ## 3. Sur le VPS : les secrets

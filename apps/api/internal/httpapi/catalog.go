@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"regexp"
 	"slices"
 	"time"
 
@@ -101,9 +102,18 @@ func listEpisodes(catalog catalogReader) http.HandlerFunc {
 	}
 }
 
+// episodeID : forme des identifiants publics (langue et numéro sur 3 chiffres, contrainte de la base).
+// Un identifiant d'une autre forme donne 404 sans atteindre la base : un octet invalide
+// en UTF-8 y provoquerait une erreur 500, et une longue ligne d'erreur dans les journaux.
+var episodeID = regexp.MustCompile(`^(fr|ar|en)-[0-9]{3}$`)
+
 // getEpisode : l'identifiant part en paramètre SQL ; inconnu ou mal formé, il donne 404.
 func getEpisode(catalog catalogReader) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if !episodeID.MatchString(r.PathValue("id")) {
+			writeError(w, r, http.StatusNotFound, "not_found")
+			return
+		}
 		episode, err := catalog.Episode(r.Context(), r.PathValue("id"))
 		if errors.Is(err, service.ErrNotFound) {
 			writeError(w, r, http.StatusNotFound, "not_found")
@@ -122,6 +132,10 @@ func getEpisode(catalog catalogReader) http.HandlerFunc {
 func getEpisodeAudio(catalog catalogReader) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "no-store")
+		if !episodeID.MatchString(r.PathValue("id")) {
+			writeError(w, r, http.StatusNotFound, "not_found")
+			return
+		}
 		audio, err := catalog.AudioURL(r.Context(), r.PathValue("id"))
 		if errors.Is(err, service.ErrNotFound) {
 			writeError(w, r, http.StatusNotFound, "not_found")

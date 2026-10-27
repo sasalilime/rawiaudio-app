@@ -26,7 +26,7 @@
 - **Poids des images** :
   - WebP 960 × 540, qualité 70, métadonnées retirées. Mesuré sur les quatre visuels du site : 15 à 41 Ko, contre 21 à 88 Ko en 1280 px, sans différence visible sur un écran d'iPhone ;
   - 60 Ko au plus, vérifié à la publication ;
-  - clé `<langue>/<numéro>-<slug>/image-16x9.webp`. Une image publiée ne change jamais : pour la remplacer, on la dépose sous une nouvelle clé (`image-16x9-2.webp`) et on met la base à jour ;
+  - clé `<langue>/<numéro>-<slug>/image-16x9-<6 caractères aléatoires>.webp` : le bucket est public, et une illustration déposée avant la sortie de l'épisode ne doit pas se deviner à partir de son titre (revue de sécurité du 27 octobre 2026). Une image publiée ne change jamais : pour la remplacer, on la dépose sous une nouvelle clé (`image-16x9-2.webp`) et on met la base à jour ;
   - déposée avec `Cache-Control: public, max-age=31536000, immutable` : téléphones, navigateurs et cache de Cloudflare la gardent un an, et R2 n'est presque jamais relu.
 - **API** :
   - colonne `episodes.image_key`, facultative ;

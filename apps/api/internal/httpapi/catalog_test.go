@@ -225,3 +225,13 @@ func TestGetEpisodeAudio(t *testing.T) {
 		})
 	}
 }
+
+func TestMalformedEpisodeIDIsNotFoundWithoutReachingTheCatalog(t *testing.T) {
+	// Le faux catalogue répondrait 500 : un 404 prouve qu'il n'a pas été appelé.
+	catalog := fakeCatalog{err: errors.New("ne doit pas être appelé")}
+	for _, id := range []string{"%FF", "FR-001", "fr-1", "fr-0001", "de-001", "fr-001%0A", strings.Repeat("a", 2000)} {
+		for _, target := range []string{"/episodes/" + id, "/episodes/" + id + "/audio"} {
+			assertJSON(t, serve(catalog, target), http.StatusNotFound, `{"error": "not_found"}`)
+		}
+	}
+}

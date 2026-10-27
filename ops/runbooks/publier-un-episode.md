@@ -27,18 +27,22 @@ Contrôle (attendu : `960,540`, puis `OK`) :
 ffprobe -v error -show_entries stream=width,height -of csv=p=0 image-16x9.webp
 [ "$(stat -c %s image-16x9.webp)" -le 61440 ] && echo OK || echo "TROP LOURD : refaire la conversion avec -quality 60"
 ```
+La clé finit par 6 caractères aléatoires : le bucket est public, et une image déposée avant la sortie de l'épisode ne doit pas se deviner à partir de son titre. Noter la clé affichée, elle sert aux étapes 3 et 7.
+```bash
+cle="fr/005-<slug>/image-16x9-$(openssl rand -hex 3).webp"; echo "$cle"
+```
 Dépôt dans le bucket public `rawi-images` (créé une fois, voir en bas), avec un cache d'un an :
 ```bash
-npx wrangler@4.142.0 r2 object put rawi-images/fr/005-<slug>/image-16x9.webp --file image-16x9.webp --content-type image/webp --cache-control "public, max-age=31536000, immutable" --jurisdiction eu --remote
+npx wrangler@4.142.0 r2 object put "rawi-images/$cle" --file image-16x9.webp --content-type image/webp --cache-control "public, max-age=31536000, immutable" --jurisdiction eu --remote
 ```
-- Une image déposée ne se remplace jamais sous la même clé : téléphones et cache de Cloudflare la gardent un an. Pour la changer, la déposer sous `image-16x9-2.webp`, puis mettre la base à jour : `UPDATE episodes SET image_key = 'fr/005-<slug>/image-16x9-2.webp' WHERE id = 'fr-005'`.
+- Une image déposée ne se remplace jamais sous la même clé : téléphones et cache de Cloudflare la gardent un an. Pour la changer, la déposer sous une nouvelle clé tirée de la même façon, puis mettre la base à jour : `UPDATE episodes SET image_key = '<nouvelle clé>' WHERE id = 'fr-005'`.
 
 ## 3. L'épisode en base, non publié
-`image_key` : la clé de l'étape 2, ou `NULL` sans illustration.
+`image_key` : la clé affichée à l'étape 2, ou `NULL` sans illustration.
 ```bash
 ssh vps 'sudo -u rawi psql -d rawi -v ON_ERROR_STOP=1' <<'SQL'
 INSERT INTO episodes (id, lang, number, slug, title, reference, duration_seconds, series_id, image_key)
-VALUES ('fr-005', 'fr', 5, '<slug>', '<Titre>', 'Sourate <…>, versets <…>', <durée en secondes>, NULL, 'fr/005-<slug>/image-16x9.webp');
+VALUES ('fr-005', 'fr', 5, '<slug>', '<Titre>', 'Sourate <…>, versets <…>', <durée en secondes>, NULL, '<clé de l''étape 2>');
 SQL
 ```
 - Une apostrophe dans un texte SQL s'écrit deux fois : `'L''homme'`.
@@ -76,7 +80,7 @@ echo "UPDATE episodes SET published_at = '2026-11-06 06:00:00+00' WHERE id = 'fr
 ```bash
 curl -s "https://api.rawiaudio.com/episodes/fr-005" | head -c 300; echo
 curl -s "https://api.rawiaudio.com/episodes/fr-005/audio" | head -c 120; echo
-curl -sI "https://media.rawiaudio.com/fr/005-<slug>/image-16x9.webp" | grep -iE '^(HTTP|content-type|cache-control|cf-cache-status)'
+curl -sI "https://media.rawiaudio.com/<clé de l'étape 2>" | grep -iE '^(HTTP|content-type|cache-control|cf-cache-status)'
 ```
 - La fiche doit contenir les sources, et `imageUrl` si l'épisode a une illustration.
 - La deuxième commande doit renvoyer une URL : ouvrir l'épisode dans l'appli et l'écouter quelques secondes.

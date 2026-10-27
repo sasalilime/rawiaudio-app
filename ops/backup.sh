@@ -10,6 +10,7 @@ KEEP_DAYS="${KEEP_DAYS:-14}"
 umask 077 # les sauvegardes contiendront les données des familles : lisibles par leur seul propriétaire
 mkdir -p "$BACKUP_DIR"
 file="$BACKUP_DIR/rawi-$(date -u +%Y-%m-%dT%H%M%SZ).dump"
+trap 'rm -f "$file.partial"' EXIT # un dump interrompu ne doit pas rester sur le disque
 
 # D'abord dans un fichier temporaire : un dump interrompu ne doit jamais passer pour une sauvegarde valide.
 pg_dump --dbname=rawi --format=custom --file="$file.partial"
